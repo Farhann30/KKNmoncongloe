@@ -1,0 +1,11 @@
+{
+  "name": "sistem-absen-vercel",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "dev": "vercel dev"
+  },
+  "dependencies": {
+    "googleapis": "^130.0.0"
+  }
+}
