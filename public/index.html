@@ -1,5 +1,74 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistem Absensi Sederhana</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f4f4f4; display: flex; justify-content: center; align-items: center; height: 100vh; }
+        .absen-box { background: #fff; padding: 2em; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        input, button { padding: 0.5em; margin-top: 1em; width: 100%; }
+        button { background: #007bff; color: #fff; border: none; border-radius: 4px; cursor: pointer; }
+        button:disabled { background: #aaa; }
+    </style>
+</head>
+<body>
+    <div class="absen-box">
+        <h2>Absensi Kehadiran</h2>
+        <input type="text" id="nama" placeholder="Masukkan Nama" required />
+        <button id="absenBtn">Absen</button>
+        <p id="status"></p>
+    </div>
+    <script>
+        // Generate Device ID jika belum ada
+        function getDeviceId() {
+            let deviceId = localStorage.getItem('device_id');
+            if (!deviceId) {
+                deviceId = crypto.randomUUID();
+                localStorage.setItem('device_id', deviceId);
+            }
+            return deviceId;
+        }
+
+        document.getElementById('absenBtn').onclick = function() {
+            const nama = document.getElementById('nama').value.trim();
+            const status = document.getElementById('status');
+            if (!nama) {
+                status.textContent = 'Nama wajib diisi!';
+                return;
+            }
+            status.textContent = 'Mengambil lokasi...';
+            if (!navigator.geolocation) {
+                status.textContent = 'Geolocation tidak didukung browser.';
+                return;
+            }
+            navigator.geolocation.getCurrentPosition(function(pos) {
+                const data = {
+                    nama: nama,
+                    waktu: new Date().toISOString(),
+                    latitude: pos.coords.latitude,
+                    longitude: pos.coords.longitude,
+                    deviceId: getDeviceId()
+                };
+                status.textContent = 'Mengirim data absensi...';
                 fetch('/api/absen', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(data)
-                }) 
+                })
+                .then(res => res.json())
+                .then(res => {
+                    if (res.success) {
+                        status.textContent = 'Absensi berhasil!';
+                    } else {
+                        status.textContent = 'Gagal absen: ' + (res.message || 'Unknown error');
+                    }
+                })
+                .catch(() => status.textContent = 'Gagal mengirim data.');
+            }, function() {
+                status.textContent = 'Gagal mengambil lokasi.';
+            });
+        };
+    </script>
+</body>
+</html> 
