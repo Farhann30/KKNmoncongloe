@@ -7,16 +7,16 @@
     <style>
         body { font-family: Arial, sans-serif; background: #f4f4f4; display: flex; justify-content: center; align-items: center; height: 100vh; }
         .absen-box { background: #fff; padding: 2em; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-        input, button { padding: 0.5em; margin-top: 1em; width: 100%; }
-        button { background: #007bff; color: #fff; border: none; border-radius: 4px; cursor: pointer; }
+        #countdown { font-size: 1.2em; margin-bottom: 1em; }
+        button { padding: 0.5em; margin-top: 1em; width: 100%; background: #007bff; color: #fff; border: none; border-radius: 4px; cursor: pointer; }
         button:disabled { background: #aaa; }
     </style>
 </head>
 <body>
     <div class="absen-box">
         <h2>Absensi Kehadiran</h2>
-        <input type="text" id="nama" placeholder="Masukkan Nama" required />
-        <button id="absenBtn">Absen</button>
+        <div id="countdown"></div>
+        <button id="absenBtn" style="display:none">Absen</button>
         <p id="status"></p>
     </div>
     <script>
@@ -30,13 +30,55 @@
             return deviceId;
         }
 
-        document.getElementById('absenBtn').onclick = function() {
-            const nama = document.getElementById('nama').value.trim();
-            const status = document.getElementById('status');
-            if (!nama) {
-                status.textContent = 'Nama wajib diisi!';
-                return;
+        // Cek apakah sekarang dalam jam absen
+        function getAbsenSession(now) {
+            const pagiStart = new Date(now);
+            pagiStart.setHours(0,0,0,0); // mulai jam 00:00
+            const pagiEnd = new Date(now);
+            pagiEnd.setHours(23,59,59,999); // sampai jam 23:59
+            const soreStart = new Date(now);
+            soreStart.setHours(17,0,0,0);
+            const soreEnd = new Date(now);
+            soreEnd.setHours(18,0,0,0);
+            if (now >= pagiStart && now <= pagiEnd) return { aktif: true, sesi: 'pagi', end: pagiEnd };
+            if (now >= soreStart && now <= soreEnd) return { aktif: true, sesi: 'sore', end: soreEnd };
+            // Tentukan sesi berikutnya
+            if (now < pagiStart) return { aktif: false, sesi: 'pagi', start: pagiStart };
+            if (now > pagiEnd && now < soreStart) return { aktif: false, sesi: 'sore', start: soreStart };
+            // Setelah sore, sesi berikutnya besok pagi
+            const besokPagi = new Date(now);
+            besokPagi.setDate(besokPagi.getDate() + 1);
+            besokPagi.setHours(7,0,0,0);
+            return { aktif: false, sesi: 'pagi', start: besokPagi };
+        }
+
+        function updateCountdown() {
+            const now = new Date();
+            const session = getAbsenSession(now);
+            const countdown = document.getElementById('countdown');
+            const absenBtn = document.getElementById('absenBtn');
+            if (session.aktif) {
+                absenBtn.style.display = '';
+                absenBtn.disabled = false;
+                const sisa = Math.floor((session.end - now) / 1000);
+                const jam = Math.floor(sisa / 3600);
+                const menit = Math.floor((sisa % 3600) / 60);
+                const detik = sisa % 60;
+                countdown.textContent = `Sesi absen ${session.sesi} aktif. Sisa waktu: ${jam.toString().padStart(2,'0')}:${menit.toString().padStart(2,'0')}:${detik.toString().padStart(2,'0')}`;
+            } else {
+                absenBtn.style.display = 'none';
+                const sisa = Math.floor((session.start - now) / 1000);
+                const jam = Math.floor(sisa / 3600);
+                const menit = Math.floor((sisa % 3600) / 60);
+                const detik = sisa % 60;
+                countdown.textContent = `Sesi absen ${session.sesi} akan dibuka dalam: ${jam.toString().padStart(2,'0')}:${menit.toString().padStart(2,'0')}:${detik.toString().padStart(2,'0')}`;
             }
+        }
+        setInterval(updateCountdown, 1000);
+        updateCountdown();
+
+        document.getElementById('absenBtn').onclick = function() {
+            const status = document.getElementById('status');
             status.textContent = 'Mengambil lokasi...';
             if (!navigator.geolocation) {
                 status.textContent = 'Geolocation tidak didukung browser.';
@@ -44,7 +86,7 @@
             }
             navigator.geolocation.getCurrentPosition(function(pos) {
                 const data = {
-                    nama: nama,
+                    nama: '', // Tidak perlu nama
                     waktu: new Date().toISOString(),
                     latitude: pos.coords.latitude,
                     longitude: pos.coords.longitude,
