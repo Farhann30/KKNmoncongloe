@@ -16,11 +16,11 @@
     <div class="absen-box">
         <h2>Absensi Kehadiran</h2>
         <div id="countdown"></div>
+        <button id="verifBtn" style="display:none">Verifikasi Device</button>
         <button id="absenBtn" style="display:none">Absen</button>
         <p id="status"></p>
     </div>
     <script>
-        // Generate Device ID jika belum ada
         function getDeviceId() {
             let deviceId = localStorage.getItem('device_id');
             if (!deviceId) {
@@ -30,52 +30,95 @@
             return deviceId;
         }
 
-        // Cek apakah sekarang dalam jam absen
-        function getAbsenSession(now) {
-            const pagiStart = new Date(now);
-            pagiStart.setHours(0,0,0,0); // mulai jam 00:00
-            const pagiEnd = new Date(now);
-            pagiEnd.setHours(23,59,59,999); // sampai jam 23:59
-            const soreStart = new Date(now);
-            soreStart.setHours(17,0,0,0);
-            const soreEnd = new Date(now);
-            soreEnd.setHours(18,0,0,0);
-            if (now >= pagiStart && now <= pagiEnd) return { aktif: true, sesi: 'pagi', end: pagiEnd };
-            if (now >= soreStart && now <= soreEnd) return { aktif: true, sesi: 'sore', end: soreEnd };
-            // Tentukan sesi berikutnya
-            if (now < pagiStart) return { aktif: false, sesi: 'pagi', start: pagiStart };
-            if (now > pagiEnd && now < soreStart) return { aktif: false, sesi: 'sore', start: soreStart };
-            // Setelah sore, sesi berikutnya besok pagi
-            const besokPagi = new Date(now);
-            besokPagi.setDate(besokPagi.getDate() + 1);
-            besokPagi.setHours(7,0,0,0);
-            return { aktif: false, sesi: 'pagi', start: besokPagi };
-        }
-
-        function updateCountdown() {
-            const now = new Date();
-            const session = getAbsenSession(now);
-            const countdown = document.getElementById('countdown');
-            const absenBtn = document.getElementById('absenBtn');
-            if (session.aktif) {
-                absenBtn.style.display = '';
-                absenBtn.disabled = false;
-                const sisa = Math.floor((session.end - now) / 1000);
-                const jam = Math.floor(sisa / 3600);
-                const menit = Math.floor((sisa % 3600) / 60);
-                const detik = sisa % 60;
-                countdown.textContent = `Sesi absen ${session.sesi} aktif. Sisa waktu: ${jam.toString().padStart(2,'0')}:${menit.toString().padStart(2,'0')}:${detik.toString().padStart(2,'0')}`;
-            } else {
-                absenBtn.style.display = 'none';
-                const sisa = Math.floor((session.start - now) / 1000);
-                const jam = Math.floor(sisa / 3600);
-                const menit = Math.floor((sisa % 3600) / 60);
-                const detik = sisa % 60;
-                countdown.textContent = `Sesi absen ${session.sesi} akan dibuka dalam: ${jam.toString().padStart(2,'0')}:${menit.toString().padStart(2,'0')}:${detik.toString().padStart(2,'0')}`;
+        async function cekVerifikasiDevice() {
+            const deviceId = getDeviceId();
+            try {
+                const res = await fetch('/api/verifikasi?deviceId=' + deviceId);
+                const data = await res.json();
+                return data.verified === true;
+            } catch {
+                return false;
             }
         }
-        setInterval(updateCountdown, 1000);
-        updateCountdown();
+
+        async function updateUI() {
+            const verifBtn = document.getElementById('verifBtn');
+            const absenBtn = document.getElementById('absenBtn');
+            const countdown = document.getElementById('countdown');
+            const status = document.getElementById('status');
+            const verified = await cekVerifikasiDevice();
+            if (!verified) {
+                verifBtn.style.display = '';
+                absenBtn.style.display = 'none';
+                countdown.textContent = 'Device belum terverifikasi. Silakan verifikasi terlebih dahulu.';
+                status.textContent = '';
+            } else {
+                verifBtn.style.display = 'none';
+                // Cek sesi absen
+                function getAbsenSession(now) {
+                    const pagiStart = new Date(now);
+                    pagiStart.setHours(7,0,0,0);
+                    const pagiEnd = new Date(now);
+                    pagiEnd.setHours(9,0,0,0);
+                    const soreStart = new Date(now);
+                    soreStart.setHours(17,0,0,0);
+                    const soreEnd = new Date(now);
+                    soreEnd.setHours(18,0,0,0);
+                    if (now >= pagiStart && now <= pagiEnd) return { aktif: true, sesi: 'pagi', end: pagiEnd };
+                    if (now >= soreStart && now <= soreEnd) return { aktif: true, sesi: 'sore', end: soreEnd };
+                    if (now < pagiStart) return { aktif: false, sesi: 'pagi', start: pagiStart };
+                    if (now > pagiEnd && now < soreStart) return { aktif: false, sesi: 'sore', start: soreStart };
+                    const besokPagi = new Date(now);
+                    besokPagi.setDate(besokPagi.getDate() + 1);
+                    besokPagi.setHours(7,0,0,0);
+                    return { aktif: false, sesi: 'pagi', start: besokPagi };
+                }
+                function updateCountdown() {
+                    const now = new Date();
+                    const session = getAbsenSession(now);
+                    if (session.aktif) {
+                        absenBtn.style.display = '';
+                        absenBtn.disabled = false;
+                        const sisa = Math.floor((session.end - now) / 1000);
+                        const jam = Math.floor(sisa / 3600);
+                        const menit = Math.floor((sisa % 3600) / 60);
+                        const detik = sisa % 60;
+                        countdown.textContent = `Sesi absen ${session.sesi} aktif. Sisa waktu: ${jam.toString().padStart(2,'0')}:${menit.toString().padStart(2,'0')}:${detik.toString().padStart(2,'0')}`;
+                    } else {
+                        absenBtn.style.display = 'none';
+                        const sisa = Math.floor((session.start - now) / 1000);
+                        const jam = Math.floor(sisa / 3600);
+                        const menit = Math.floor((sisa % 3600) / 60);
+                        const detik = sisa % 60;
+                        countdown.textContent = `Sesi absen ${session.sesi} akan dibuka dalam: ${jam.toString().padStart(2,'0')}:${menit.toString().padStart(2,'0')}:${detik.toString().padStart(2,'0')}`;
+                    }
+                }
+                setInterval(updateCountdown, 1000);
+                updateCountdown();
+            }
+        }
+
+        document.getElementById('verifBtn').onclick = async function() {
+            const status = document.getElementById('status');
+            status.textContent = 'Memverifikasi device...';
+            const deviceId = getDeviceId();
+            try {
+                const res = await fetch('/api/verifikasi', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ deviceId })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    status.textContent = 'Device berhasil diverifikasi!';
+                    setTimeout(updateUI, 1000);
+                } else {
+                    status.textContent = 'Gagal verifikasi device: ' + (data.message || 'Unknown error');
+                }
+            } catch {
+                status.textContent = 'Gagal menghubungi server.';
+            }
+        };
 
         document.getElementById('absenBtn').onclick = function() {
             const status = document.getElementById('status');
@@ -86,7 +129,7 @@
             }
             navigator.geolocation.getCurrentPosition(function(pos) {
                 const data = {
-                    nama: '', // Tidak perlu nama
+                    nama: '',
                     waktu: new Date().toISOString(),
                     latitude: pos.coords.latitude,
                     longitude: pos.coords.longitude,
@@ -111,6 +154,8 @@
                 status.textContent = 'Gagal mengambil lokasi.';
             });
         };
+
+        updateUI();
     </script>
 </body>
 </html> 
