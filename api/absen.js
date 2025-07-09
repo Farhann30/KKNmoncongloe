@@ -26,7 +26,7 @@ export default async function handler(req, res) {
     return res.status(405).json({ success: false, message: 'Method not allowed' });
   }
   const { nama, waktu, latitude, longitude, deviceId } = req.body;
-  if (!nama || !waktu || !latitude || !longitude || !deviceId) {
+  if (!waktu || !latitude || !longitude || !deviceId) {
     return res.status(400).json({ success: false, message: 'Data tidak lengkap.' });
   }
   try {
