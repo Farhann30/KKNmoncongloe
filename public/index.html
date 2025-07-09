@@ -44,6 +44,7 @@
             <div id="userInfo"></div>
             <div id="countdown"></div>
             <button id="absenBtn" style="display:none">Absen</button>
+            <button id="adminBtn" class="hidden" style="background:#28a745; margin-top:1em;">Admin</button>
             <button id="logoutBtn" class="logout">Logout</button>
             <p id="status"></p>
         </div>
@@ -243,6 +244,16 @@
         function loadAbsenPage() {
             // Tampilkan NIM user
             document.getElementById('userInfo').textContent = 'Login sebagai: ' + getLogin();
+            // Tampilkan tombol admin jika NIM admin
+            const adminBtn = document.getElementById('adminBtn');
+            if (getLogin() === 'E051221065') {
+                adminBtn.classList.remove('hidden');
+            } else {
+                adminBtn.classList.add('hidden');
+            }
+            adminBtn.onclick = function() {
+                window.open('admin.html', '_blank');
+            };
             ambilLokasiUser();
             setInterval(updateCountdown, 1000);
             updateCountdown();
