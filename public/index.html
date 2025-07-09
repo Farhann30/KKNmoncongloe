@@ -41,6 +41,61 @@
             }
         }
 
+        const POSKO_LAT = -5.141315;
+        const POSKO_LON = 119.487645;
+        const RADIUS_METER = 150;
+
+        function getDistanceFromLatLonInMeters(lat1, lon1, lat2, lon2) {
+            const R = 6371000;
+            const dLat = (lat2-lat1) * Math.PI/180;
+            const dLon = (lon2-lon1) * Math.PI/180;
+            const a =
+                Math.sin(dLat/2) * Math.sin(dLat/2) +
+                Math.cos(lat1 * Math.PI/180) * Math.cos(lat2 * Math.PI/180) *
+                Math.sin(dLon/2) * Math.sin(dLon/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            return R * c;
+        }
+
+        let userLocation = null;
+        function cekLokasiDanUpdateAbsenBtn() {
+            const absenBtn = document.getElementById('absenBtn');
+            const status = document.getElementById('status');
+            if (!userLocation) {
+                absenBtn.disabled = true;
+                status.textContent = 'Mengambil lokasi...';
+                return;
+            }
+            const jarak = getDistanceFromLatLonInMeters(userLocation.lat, userLocation.lon, POSKO_LAT, POSKO_LON);
+            if (jarak <= RADIUS_METER) {
+                absenBtn.disabled = false;
+                status.textContent = '';
+            } else {
+                absenBtn.disabled = true;
+                status.textContent = `Anda di luar radius posko (${Math.round(jarak)} meter). Absen hanya bisa di dalam radius 150 meter.`;
+            }
+        }
+
+        // Ambil lokasi user saat load
+        function ambilLokasiUser() {
+            if (!navigator.geolocation) {
+                document.getElementById('status').textContent = 'Geolocation tidak didukung browser.';
+                return;
+            }
+            navigator.geolocation.getCurrentPosition(function(pos) {
+                userLocation = {
+                    lat: pos.coords.latitude,
+                    lon: pos.coords.longitude
+                };
+                cekLokasiDanUpdateAbsenBtn();
+            }, function() {
+                document.getElementById('status').textContent = 'Gagal mengambil lokasi.';
+            });
+        }
+
+        // Panggil ambilLokasiUser saat UI siap
+        window.addEventListener('DOMContentLoaded', ambilLokasiUser);
+
         async function updateUI() {
             const verifBtn = document.getElementById('verifBtn');
             const absenBtn = document.getElementById('absenBtn');
@@ -92,6 +147,7 @@
                         const detik = sisa % 60;
                         countdown.textContent = `Sesi absen ${session.sesi} akan dibuka dalam: ${jam.toString().padStart(2,'0')}:${menit.toString().padStart(2,'0')}:${detik.toString().padStart(2,'0')}`;
                     }
+                    cekLokasiDanUpdateAbsenBtn();
                 }
                 setInterval(updateCountdown, 1000);
                 updateCountdown();
@@ -123,36 +179,32 @@
         document.getElementById('absenBtn').onclick = function() {
             const status = document.getElementById('status');
             status.textContent = 'Mengambil lokasi...';
-            if (!navigator.geolocation) {
-                status.textContent = 'Geolocation tidak didukung browser.';
+            if (!userLocation) {
+                status.textContent = 'Lokasi belum tersedia.';
                 return;
             }
-            navigator.geolocation.getCurrentPosition(function(pos) {
-                const data = {
-                    nama: '',
-                    waktu: new Date().toISOString(),
-                    latitude: pos.coords.latitude,
-                    longitude: pos.coords.longitude,
-                    deviceId: getDeviceId()
-                };
-                status.textContent = 'Mengirim data absensi...';
-                fetch('/api/absen', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(data)
-                })
-                .then(res => res.json())
-                .then(res => {
-                    if (res.success) {
-                        status.textContent = 'Absensi berhasil!';
-                    } else {
-                        status.textContent = 'Gagal absen: ' + (res.message || 'Unknown error');
-                    }
-                })
-                .catch(() => status.textContent = 'Gagal mengirim data.');
-            }, function() {
-                status.textContent = 'Gagal mengambil lokasi.';
-            });
+            const data = {
+                nama: '',
+                waktu: new Date().toISOString(),
+                latitude: userLocation.lat,
+                longitude: userLocation.lon,
+                deviceId: getDeviceId()
+            };
+            status.textContent = 'Mengirim data absensi...';
+            fetch('/api/absen', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            })
+            .then(res => res.json())
+            .then(res => {
+                if (res.success) {
+                    status.textContent = 'Absensi berhasil!';
+                } else {
+                    status.textContent = 'Gagal absen: ' + (res.message || 'Unknown error');
+                }
+            })
+            .catch(() => status.textContent = 'Gagal mengirim data.');
         };
 
         updateUI();
