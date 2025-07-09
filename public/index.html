@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistem Absensi Sederhana</title>
+    <title>Sistem Absensi Firebase</title>
     <style>
         body { font-family: Arial, sans-serif; background: #f4f4f4; display: flex; justify-content: center; align-items: center; height: 100vh; }
         .absen-box { background: #fff; padding: 2em; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
@@ -11,6 +11,9 @@
         button { padding: 0.5em; margin-top: 1em; width: 100%; background: #007bff; color: #fff; border: none; border-radius: 4px; cursor: pointer; }
         button:disabled { background: #aaa; }
     </style>
+    <!-- Firebase CDN -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 </head>
 <body>
     <div class="absen-box">
@@ -20,6 +23,19 @@
         <p id="status"></p>
     </div>
     <script>
+        // Konfigurasi Firebase Anda
+        const firebaseConfig = {
+          apiKey: "AIzaSyCtER1JtiUgxMNu0H4CIr9zyCqK6CTrG1M",
+          authDomain: "kknmoncongloe-952e7.firebaseapp.com",
+          projectId: "kknmoncongloe-952e7",
+          storageBucket: "kknmoncongloe-952e7.firebasestorage.app",
+          messagingSenderId: "633205686416",
+          appId: "1:633205686416:web:af782584f38ec285c15815",
+          measurementId: "G-Q6MKWYT9PG"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
         function getDeviceId() {
             let deviceId = localStorage.getItem('device_id');
             if (!deviceId) {
@@ -86,20 +102,20 @@
 
         function getAbsenSession(now) {
             const pagiStart = new Date(now);
-            pagiStart.setHours(20,0,0,0); // Ubah ke jam 20:00
+            pagiStart.setHours(7,0,0,0);
             const pagiEnd = new Date(now);
-            pagiEnd.setHours(21,0,0,0); // Ubah ke jam 21:00
+            pagiEnd.setHours(9,0,0,0);
             const soreStart = new Date(now);
-            soreStart.setHours(17,0,0,0);
+            soreStart.setHours(19,0,0,0);
             const soreEnd = new Date(now);
-            soreEnd.setHours(18,0,0,0);
+            soreEnd.setHours(21,0,0,0);
             if (now >= pagiStart && now <= pagiEnd) return { aktif: true, sesi: 'pagi', end: pagiEnd };
             if (now >= soreStart && now <= soreEnd) return { aktif: true, sesi: 'sore', end: soreEnd };
             if (now < pagiStart) return { aktif: false, sesi: 'pagi', start: pagiStart };
             if (now > pagiEnd && now < soreStart) return { aktif: false, sesi: 'sore', start: soreStart };
             const besokPagi = new Date(now);
             besokPagi.setDate(besokPagi.getDate() + 1);
-            besokPagi.setHours(20,0,0,0);
+            besokPagi.setHours(7,0,0,0);
             return { aktif: false, sesi: 'pagi', start: besokPagi };
         }
 
@@ -137,27 +153,19 @@
                 return;
             }
             const data = {
-                nama: '',
+                deviceId: getDeviceId(),
                 waktu: new Date().toISOString(),
                 latitude: userLocation.lat,
-                longitude: userLocation.lon,
-                deviceId: getDeviceId()
+                longitude: userLocation.lon
             };
-            status.textContent = 'Mengirim data absensi...';
-            fetch('/api/absen', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data)
+            status.textContent = 'Menyimpan data absensi...';
+            db.collection("absensi").add(data)
+            .then(() => {
+                status.textContent = 'Absensi berhasil!';
             })
-            .then(res => res.json())
-            .then(res => {
-                if (res.success) {
-                    status.textContent = 'Absensi berhasil!';
-                } else {
-                    status.textContent = 'Gagal absen: ' + (res.message || 'Unknown error');
-                }
-            })
-            .catch(() => status.textContent = 'Gagal mengirim data.');
+            .catch((error) => {
+                status.textContent = 'Gagal absen: ' + error.message;
+            });
         };
     </script>
 </body>

@@ -6,6 +6,7 @@
     "dev": "vercel dev"
   },
   "dependencies": {
+    "firebase": "^11.10.0",
     "googleapis": "^130.0.0"
   }
 }
