@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Daftar Hadir</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f4f4f4; display: flex; justify-content: center; align-items: flex-start; min-height: 100vh; }
+        .admin-box { background: #fff; padding: 2em; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-top: 2em; min-width: 340px; }
+        table { border-collapse: collapse; width: 100%; margin-top: 1em; }
+        th, td { border: 1px solid #ccc; padding: 0.5em; text-align: left; }
+        th { background: #007bff; color: #fff; }
+        .logout { background: #dc3545; margin-top: 1em; width: 100%; }
+    </style>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+</head>
+<body>
+    <div class="admin-box">
+        <h2>Daftar Hadir - Admin</h2>
+        <div id="adminInfo"></div>
+        <button id="logoutBtn" class="logout">Logout</button>
+        <div id="tableWrap">
+            <p>Memuat data...</p>
+        </div>
+    </div>
+    <script>
+        // Firebase config
+        const firebaseConfig = {
+          apiKey: "AIzaSyCtER1JtiUgxMNu0H4CIr9zyCqK6CTrG1M",
+          authDomain: "kknmoncongloe-952e7.firebaseapp.com",
+          projectId: "kknmoncongloe-952e7",
+          storageBucket: "kknmoncongloe-952e7.firebasestorage.app",
+          messagingSenderId: "633205686416",
+          appId: "1:633205686416:web:af782584f38ec285c15815",
+          measurementId: "G-Q6MKWYT9PG"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        // Auth helpers
+        function getLogin() {
+            return localStorage.getItem('login_nim');
+        }
+        function logout() {
+            localStorage.removeItem('login_nim');
+            window.location.href = 'index.html';
+        }
+        document.getElementById('logoutBtn').onclick = logout;
+
+        // NIM admin
+        const ADMIN_NIM = 'E051221065';
+
+        // Cek login dan admin
+        const nim = getLogin();
+        if (!nim) {
+            window.location.href = 'index.html';
+        } else if (nim !== ADMIN_NIM) {
+            alert('Akses hanya untuk admin!');
+            window.location.href = 'index.html';
+        } else {
+            document.getElementById('adminInfo').textContent = 'Login sebagai admin: ' + nim;
+            loadAbsensi();
+        }
+
+        // Load data absensi
+        function loadAbsensi() {
+            db.collection('absensi').orderBy('waktu', 'desc').get().then(snap => {
+                if (snap.empty) {
+                    document.getElementById('tableWrap').innerHTML = '<p>Belum ada data absensi.</p>';
+                    return;
+                }
+                let html = '<table><tr><th>NIM</th><th>Device ID</th><th>Waktu</th><th>Latitude</th><th>Longitude</th></tr>';
+                snap.forEach(doc => {
+                    const d = doc.data();
+                    html += `<tr><td>${d.nim || ''}</td><td>${d.deviceId || ''}</td><td>${d.waktu ? new Date(d.waktu).toLocaleString('id-ID') : ''}</td><td>${d.latitude || ''}</td><td>${d.longitude || ''}</td></tr>`;
+                });
+                html += '</table>';
+                document.getElementById('tableWrap').innerHTML = html;
+            }).catch(err => {
+                document.getElementById('tableWrap').innerHTML = '<p>Gagal memuat data absensi.</p>';
+            });
+        }
+    </script>
+</body>
+</html> 
