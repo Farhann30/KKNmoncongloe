@@ -23,7 +23,15 @@
         <!-- Register -->
         <div id="registerPage" class="hidden">
             <h2>Daftar Akun</h2>
+            <input type="text" id="regNama" placeholder="Nama" autocomplete="off" />
             <input type="text" id="regNim" placeholder="NIM" autocomplete="off" />
+            <select id="regDesa">
+                <option value="">Pilih Desa</option>
+                <option value="Moncongloe">Moncongloe</option>
+                <option value="Moncongloe Bulu">Moncongloe Bulu</option>
+                <option value="Bonto Bunga">Bonto Bunga</option>
+            </select>
+            <input type="text" id="regFakultas" placeholder="Fakultas" autocomplete="off" />
             <input type="password" id="regPassword" placeholder="Password" />
             <button id="registerBtn">Daftar</button>
             <p id="registerStatus"></p>
@@ -104,12 +112,15 @@
 
         // Register
         document.getElementById('registerBtn').onclick = async function() {
+            const nama = document.getElementById('regNama').value.trim();
             const nim = document.getElementById('regNim').value.trim();
+            const desa = document.getElementById('regDesa').value;
+            const fakultas = document.getElementById('regFakultas').value.trim();
             const password = document.getElementById('regPassword').value;
             const status = document.getElementById('registerStatus');
             status.textContent = 'Mendaftarkan...';
-            if (!nim || !password) {
-                status.textContent = 'NIM dan password wajib diisi!';
+            if (!nama || !nim || !desa || !fakultas || !password) {
+                status.textContent = 'Semua field wajib diisi!';
                 return;
             }
             // Cek NIM sudah ada?
@@ -118,7 +129,7 @@
                 status.textContent = 'NIM sudah terdaftar!';
                 return;
             }
-            await db.collection('users').add({ nim, password });
+            await db.collection('users').add({ nama, nim, desa, fakultas, password });
             status.textContent = 'Berhasil daftar! Silakan login.';
             setTimeout(showLogin, 1000);
         };
