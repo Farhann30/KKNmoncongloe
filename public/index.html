@@ -86,9 +86,9 @@
 
         function getAbsenSession(now) {
             const pagiStart = new Date(now);
-            pagiStart.setHours(20,0,0,0);
+            pagiStart.setHours(20,0,0,0); // Ubah ke jam 20:00
             const pagiEnd = new Date(now);
-            pagiEnd.setHours(9,0,0,0);
+            pagiEnd.setHours(21,0,0,0); // Ubah ke jam 21:00
             const soreStart = new Date(now);
             soreStart.setHours(17,0,0,0);
             const soreEnd = new Date(now);
@@ -99,7 +99,7 @@
             if (now > pagiEnd && now < soreStart) return { aktif: false, sesi: 'sore', start: soreStart };
             const besokPagi = new Date(now);
             besokPagi.setDate(besokPagi.getDate() + 1);
-            besokPagi.setHours(7,0,0,0);
+            besokPagi.setHours(20,0,0,0);
             return { aktif: false, sesi: 'pagi', start: besokPagi };
         }
 
