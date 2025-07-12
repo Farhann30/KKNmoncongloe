@@ -158,10 +158,24 @@
         document.getElementById('logoutBtn').onclick = logout;
 
         // Absensi
-        const POSKO_LAT = -5.141315;
-        const POSKO_LON = 119.487645;
+        // Koordinat posko per desa
+        const POSKO_COORDS = {
+            'Moncongloe': { lat: -5.135274, lon: 119.536531 },
+            'Bonto Bunga': { lat: -5.138959, lon: 119.548104 },
+            'Moncongloe Bulu': { lat: -5.148056, lon: 119.558239 }
+        };
         const RADIUS_METER = 150;
         let userLocation = null;
+        let userDesa = null;
+
+        // Ambil data desa user dari Firestore setelah login
+        async function getUserDesa(nim) {
+            const snap = await db.collection('users').where('nim', '==', nim).get();
+            if (!snap.empty) {
+                return snap.docs[0].data().desa;
+            }
+            return null;
+        }
 
         function getDistanceFromLatLonInMeters(lat1, lon1, lat2, lon2) {
             const R = 6371000;
@@ -177,9 +191,9 @@
 
         function getAbsenSession(now) {
             const pagiStart = new Date(now);
-            pagiStart.setHours(21,0,0,0);
+            pagiStart.setHours(7,0,0,0);
             const pagiEnd = new Date(now);
-            pagiEnd.setHours(22,0,0,0);
+            pagiEnd.setHours(10,0,0,0);
             const soreStart = new Date(now);
             soreStart.setHours(19,0,0,0);
             const soreEnd = new Date(now);
@@ -197,18 +211,19 @@
         function cekLokasiDanUpdateAbsenBtn() {
             const absenBtn = document.getElementById('absenBtn');
             const status = document.getElementById('status');
-            if (!userLocation) {
+            if (!userLocation || !userDesa || !POSKO_COORDS[userDesa]) {
                 absenBtn.disabled = true;
-                status.textContent = 'Mengambil lokasi...';
+                status.textContent = 'Mengambil lokasi atau data desa...';
                 return;
             }
-            const jarak = getDistanceFromLatLonInMeters(userLocation.lat, userLocation.lon, POSKO_LAT, POSKO_LON);
+            const posko = POSKO_COORDS[userDesa];
+            const jarak = getDistanceFromLatLonInMeters(userLocation.lat, userLocation.lon, posko.lat, posko.lon);
             if (jarak <= RADIUS_METER) {
                 absenBtn.disabled = false;
                 status.textContent = '';
             } else {
                 absenBtn.disabled = true;
-                status.textContent = `Anda di luar radius posko (${Math.round(jarak)} meter). Absen hanya bisa di dalam radius 150 meter.`;
+                status.textContent = `Anda di luar radius posko ${userDesa} (${Math.round(jarak)} meter). Absen hanya bisa di dalam radius 150 meter.`;
             }
         }
 
@@ -253,7 +268,6 @@
         }
 
         function loadAbsenPage() {
-            // Tampilkan NIM user
             document.getElementById('userInfo').textContent = 'Login sebagai: ' + getLogin();
             // Tampilkan tombol admin jika NIM admin
             const adminBtn = document.getElementById('adminBtn');
@@ -265,7 +279,11 @@
             adminBtn.onclick = function() {
                 window.open('admin.html', '_blank');
             };
-            ambilLokasiUser();
+            // Ambil desa user dari Firestore
+            getUserDesa(getLogin()).then(desa => {
+                userDesa = desa;
+                ambilLokasiUser();
+            });
             setInterval(updateCountdown, 1000);
             updateCountdown();
         }
