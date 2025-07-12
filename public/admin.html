@@ -97,30 +97,36 @@
             });
             // Tanggal range
             const tanggalArr = getTanggalRange();
-            // Header tabel
-            let html = '<table><tr><th rowspan="2">NIM</th><th rowspan="2">Nama</th><th rowspan="2">Desa</th>';
-            tanggalArr.forEach(tgl => {
-                const tglStr = tgl.getDate() + '/' + (tgl.getMonth()+1);
-                html += `<th colspan="2">${tglStr}</th>`;
-            });
-            html += '</tr><tr>';
-            tanggalArr.forEach(() => {
-                html += '<th>P</th><th>S</th>';
-            });
-            html += '</tr>';
-            // Baris user
-            Object.entries(userMap).forEach(([nim, user]) => {
-                html += `<tr><td>${nim}</td><td>${user.nama || ''}</td><td>${user.desa || ''}</td>`;
+            // Daftar desa
+            const daftarDesa = ['Moncongloe', 'Moncongloe Bulu', 'Bonto Bunga'];
+            let html = '';
+            daftarDesa.forEach(desa => {
+                html += `<h3>Desa ${desa}</h3>`;
+                html += '<table><tr><th rowspan="2">NIM</th><th rowspan="2">Nama</th>';
                 tanggalArr.forEach(tgl => {
-                    const tglIso = tgl.toISOString().slice(0,10);
-                    // Sesi pagi
-                    html += '<td ' + getCellStyle(nim, tglIso, 'pagi', absenMap, tgl) + '></td>';
-                    // Sesi sore
-                    html += '<td ' + getCellStyle(nim, tglIso, 'sore', absenMap, tgl) + '></td>';
+                    const tglStr = tgl.getDate() + '/' + (tgl.getMonth()+1);
+                    html += `<th colspan="2">${tglStr}</th>`;
+                });
+                html += '</tr><tr>';
+                tanggalArr.forEach(() => {
+                    html += '<th>P</th><th>S</th>';
                 });
                 html += '</tr>';
+                // Baris user khusus desa ini
+                Object.entries(userMap).forEach(([nim, user]) => {
+                    if (user.desa !== desa) return;
+                    html += `<tr><td>${nim}</td><td>${user.nama || ''}</td>`;
+                    tanggalArr.forEach(tgl => {
+                        const tglIso = tgl.toISOString().slice(0,10);
+                        // Sesi pagi
+                        html += '<td ' + getCellStyle(nim, tglIso, 'pagi', absenMap, tgl) + '></td>';
+                        // Sesi sore
+                        html += '<td ' + getCellStyle(nim, tglIso, 'sore', absenMap, tgl) + '></td>';
+                    });
+                    html += '</tr>';
+                });
+                html += '</table>';
             });
-            html += '</table>';
             html += '<div style="margin-top:1em"><span style="display:inline-block;width:20px;height:20px;background:#28a745;margin-right:5px;vertical-align:middle"></span>Hadir &nbsp; <span style="display:inline-block;width:20px;height:20px;background:#dc3545;margin-right:5px;vertical-align:middle"></span>Tidak Hadir &nbsp; <span style="display:inline-block;width:20px;height:20px;background:#fff;border:1px solid #ccc;margin-right:5px;vertical-align:middle"></span>Sesi belum berjalan</div>';
             document.getElementById('tableWrap').innerHTML = html;
         }
