@@ -227,6 +227,7 @@
             }
         }
 
+        // Ambil lokasi user saat load
         function ambilLokasiUser() {
             if (!navigator.geolocation) {
                 document.getElementById('status').textContent = 'Geolocation tidak didukung browser.';
@@ -237,9 +238,11 @@
                     lat: pos.coords.latitude,
                     lon: pos.coords.longitude
                 };
+                console.log('Lokasi user:', userLocation);
                 cekLokasiDanUpdateAbsenBtn();
-            }, function() {
-                document.getElementById('status').textContent = 'Gagal mengambil lokasi.';
+            }, function(error) {
+                document.getElementById('status').textContent = 'Gagal mengambil lokasi: ' + error.message;
+                console.log('Geolocation error:', error);
             });
         }
 
@@ -282,6 +285,7 @@
             // Ambil desa user dari Firestore
             getUserDesa(getLogin()).then(desa => {
                 userDesa = desa;
+                console.log('User desa:', desa);
                 ambilLokasiUser();
             });
             setInterval(updateCountdown, 1000);
