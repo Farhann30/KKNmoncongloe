@@ -295,11 +295,13 @@
             return { sesi, tanggal };
         }
 
+        const ADMIN_NIMS = ['E051221065', 'D121221011'];
+
         async function loadAbsenPage() {
             document.getElementById('userInfo').textContent = 'Login sebagai: ' + getLogin();
             // Tampilkan tombol admin jika NIM admin
             const adminBtn = document.getElementById('adminBtn');
-            if (getLogin() === 'E051221065') {
+            if (ADMIN_NIMS.includes(getLogin())) {
                 adminBtn.classList.remove('hidden');
             } else {
                 adminBtn.classList.add('hidden');
