@@ -63,7 +63,20 @@
             loadAbsensi();
         }
 
-        // Load data absensi dan mapping user
+        // Helper: generate tanggal dari 12 Juli sampai 16 Agustus
+        function getTanggalRange() {
+            const start = new Date('2025-07-12');
+            const end = new Date('2025-08-16');
+            const arr = [];
+            let d = new Date(start);
+            while (d <= end) {
+                arr.push(new Date(d));
+                d.setDate(d.getDate() + 1);
+            }
+            return arr;
+        }
+
+        // Load data absensi dan mapping user, tampilkan rekap
         async function loadAbsensi() {
             // Ambil semua user untuk mapping NIM ke Nama dan Desa
             const userMap = {};
@@ -73,44 +86,59 @@
                 userMap[d.nim] = { nama: d.nama, desa: d.desa };
             });
             // Ambil semua absensi
-            const snap = await db.collection('absensi').orderBy('waktu', 'desc').get();
-            if (snap.empty) {
-                document.getElementById('tableWrap').innerHTML = '<p>Belum ada data absensi.</p>';
-                return;
-            }
-            // Pisahkan data per desa dan filter duplikat (1x per NIM per sesi per tanggal)
-            const dataDesa = { 'Moncongloe': [], 'Bonto Bunga': [], 'Moncongloe Bulu': [] };
-            const absenMap = {}; // key: nim|sesi|tanggal
+            const snap = await db.collection('absensi').get();
+            // Index absensi: absenMap[nim][tanggal][sesi] = true
+            const absenMap = {};
             snap.forEach(doc => {
                 const d = doc.data();
-                const user = userMap[d.nim] || {};
-                if (user.desa && dataDesa[user.desa]) {
-                    const key = `${d.nim}|${d.sesi}|${d.tanggal}`;
-                    if (!absenMap[key]) {
-                        absenMap[key] = { ...d, nama: user.nama, desa: user.desa };
-                    }
-                }
+                if (!absenMap[d.nim]) absenMap[d.nim] = {};
+                if (!absenMap[d.nim][d.tanggal]) absenMap[d.nim][d.tanggal] = {};
+                absenMap[d.nim][d.tanggal][d.sesi] = true;
             });
-            // Masukkan ke dataDesa
-            Object.values(absenMap).forEach(d => {
-                if (d.desa && dataDesa[d.desa]) {
-                    dataDesa[d.desa].push(d);
-                }
+            // Tanggal range
+            const tanggalArr = getTanggalRange();
+            // Header tabel
+            let html = '<table><tr><th rowspan="2">NIM</th><th rowspan="2">Nama</th><th rowspan="2">Desa</th>';
+            tanggalArr.forEach(tgl => {
+                const tglStr = tgl.getDate() + '/' + (tgl.getMonth()+1);
+                html += `<th colspan="2">${tglStr}</th>`;
             });
-            let html = '';
-            for (const desa of ['Moncongloe', 'Bonto Bunga', 'Moncongloe Bulu']) {
-                html += `<h3>Desa ${desa}</h3>`;
-                html += '<table><tr><th>NIM</th><th>Nama</th><th>Desa</th><th>Device ID</th><th>Waktu</th><th>Latitude</th><th>Longitude</th></tr>';
-                if (dataDesa[desa].length === 0) {
-                    html += '<tr><td colspan="7">Belum ada data</td></tr>';
-                } else {
-                    dataDesa[desa].forEach(d => {
-                        html += `<tr><td>${d.nim || ''}</td><td>${d.nama || ''}</td><td>${d.desa || ''}</td><td>${d.deviceId || ''}</td><td>${d.waktu ? new Date(d.waktu).toLocaleString('id-ID') : ''}</td><td>${d.latitude || ''}</td><td>${d.longitude || ''}</td></tr>`;
-                    });
-                }
-                html += '</table>';
-            }
+            html += '</tr><tr>';
+            tanggalArr.forEach(() => {
+                html += '<th>P</th><th>S</th>';
+            });
+            html += '</tr>';
+            // Baris user
+            Object.entries(userMap).forEach(([nim, user]) => {
+                html += `<tr><td>${nim}</td><td>${user.nama || ''}</td><td>${user.desa || ''}</td>`;
+                tanggalArr.forEach(tgl => {
+                    const tglIso = tgl.toISOString().slice(0,10);
+                    // Sesi pagi
+                    html += '<td ' + getCellStyle(nim, tglIso, 'pagi', absenMap, tgl) + '></td>';
+                    // Sesi sore
+                    html += '<td ' + getCellStyle(nim, tglIso, 'sore', absenMap, tgl) + '></td>';
+                });
+                html += '</tr>';
+            });
+            html += '</table>';
+            html += '<div style="margin-top:1em"><span style="display:inline-block;width:20px;height:20px;background:#28a745;margin-right:5px;vertical-align:middle"></span>Hadir &nbsp; <span style="display:inline-block;width:20px;height:20px;background:#dc3545;margin-right:5px;vertical-align:middle"></span>Tidak Hadir &nbsp; <span style="display:inline-block;width:20px;height:20px;background:#fff;border:1px solid #ccc;margin-right:5px;vertical-align:middle"></span>Sesi belum berjalan</div>';
             document.getElementById('tableWrap').innerHTML = html;
+        }
+
+        // Helper: style cell absen
+        function getCellStyle(nim, tanggal, sesi, absenMap, tglObj) {
+            const now = new Date();
+            // Sesi pagi: jam 09:00 lewat dianggap selesai, sore: jam 18:00 lewat dianggap selesai
+            let sesiEnd = new Date(tglObj);
+            if (sesi === 'pagi') sesiEnd.setHours(9,0,0,0);
+            else sesiEnd.setHours(18,0,0,0);
+            if (absenMap[nim] && absenMap[nim][tanggal] && absenMap[nim][tanggal][sesi]) {
+                return 'style="background:#28a745"'; // hijau
+            } else if (now > sesiEnd) {
+                return 'style="background:#dc3545"'; // merah
+            } else {
+                return 'style="background:#fff"'; // putih
+            }
         }
     </script>
 </body>
