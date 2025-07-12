@@ -255,25 +255,28 @@
             const session = getAbsenSession(now);
             const countdown = document.getElementById('countdown');
             const absenBtn = document.getElementById('absenBtn');
-            if (window.sudahAbsenSesiIni) {
-                absenBtn.style.display = 'none';
-                return;
-            }
+            // Update countdown text SELALU
             if (session.aktif) {
-                absenBtn.style.display = '';
-                absenBtn.disabled = false;
                 const sisa = Math.floor((session.end - now) / 1000);
                 const jam = Math.floor(sisa / 3600);
                 const menit = Math.floor((sisa % 3600) / 60);
                 const detik = sisa % 60;
                 countdown.textContent = `Sesi absen ${session.sesi} aktif. Sisa waktu: ${jam.toString().padStart(2,'0')}:${menit.toString().padStart(2,'0')}:${detik.toString().padStart(2,'0')}`;
             } else {
-                absenBtn.style.display = 'none';
                 const sisa = Math.floor((session.start - now) / 1000);
                 const jam = Math.floor(sisa / 3600);
                 const menit = Math.floor((sisa % 3600) / 60);
                 const detik = sisa % 60;
                 countdown.textContent = `Sesi absen ${session.sesi} akan dibuka dalam: ${jam.toString().padStart(2,'0')}:${menit.toString().padStart(2,'0')}:${detik.toString().padStart(2,'0')}`;
+            }
+            // Atur tombol absen
+            if (window.sudahAbsenSesiIni) {
+                absenBtn.style.display = 'none';
+            } else if (session.aktif) {
+                absenBtn.style.display = '';
+                absenBtn.disabled = false;
+            } else {
+                absenBtn.style.display = 'none';
             }
             cekLokasiDanUpdateAbsenBtn();
         }
