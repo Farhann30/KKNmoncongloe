@@ -11,6 +11,12 @@
         th, td { border: 1px solid #ccc; padding: 0.5em; text-align: left; }
         th { background: #007bff; color: #fff; }
         .logout { background: #dc3545; margin-top: 1em; width: 100%; }
+        td.nama-cell {
+            max-width: 180px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
     </style>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
@@ -115,7 +121,7 @@
                 // Baris user khusus desa ini
                 Object.entries(userMap).forEach(([nim, user]) => {
                     if (user.desa !== desa) return;
-                    html += `<tr><td>${nim}</td><td>${user.nama || ''}</td>`;
+                    html += `<tr><td>${nim}</td><td class='nama-cell' title="${user.nama || ''}">${user.nama || ''}</td>`;
                     tanggalArr.forEach(tgl => {
                         const tglIso = tgl.toISOString().slice(0,10);
                         // Sesi pagi
