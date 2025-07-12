@@ -7,7 +7,8 @@
     <style>
         body { font-family: Arial, sans-serif; background: #f4f4f4; display: flex; justify-content: center; align-items: flex-start; min-height: 100vh; }
         .admin-box { background: #fff; padding: 2em; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-top: 2em; min-width: 340px; }
-        table { border-collapse: collapse; width: 100%; margin-top: 1em; }
+        .table-scroll { overflow-x: auto; max-width: 100vw; }
+        table { border-collapse: collapse; width: max-content; min-width: 600px; margin-top: 1em; }
         th, td { border: 1px solid #ccc; padding: 0.5em; text-align: left; }
         th { background: #007bff; color: #fff; }
         .logout { background: #dc3545; margin-top: 1em; width: 100%; }
@@ -16,6 +17,18 @@
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
+        }
+        th.sticky-col, td.sticky-col {
+            position: sticky;
+            left: 0;
+            background: #fff;
+            z-index: 2;
+        }
+        th.sticky-col-2, td.sticky-col-2 {
+            position: sticky;
+            left: 70px;
+            background: #fff;
+            z-index: 2;
         }
     </style>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -108,7 +121,7 @@
             let html = '';
             daftarDesa.forEach(desa => {
                 html += `<h3>Desa ${desa}</h3>`;
-                html += '<table><tr><th rowspan="2">NIM</th><th rowspan="2">Nama</th>';
+                html += '<div class="table-scroll"><table><tr><th class="sticky-col" rowspan="2">NIM</th><th class="sticky-col-2" rowspan="2">Nama</th>';
                 tanggalArr.forEach(tgl => {
                     const tglStr = tgl.getDate() + '/' + (tgl.getMonth()+1);
                     html += `<th colspan="2">${tglStr}</th>`;
@@ -121,7 +134,7 @@
                 // Baris user khusus desa ini
                 Object.entries(userMap).forEach(([nim, user]) => {
                     if (user.desa !== desa) return;
-                    html += `<tr><td>${nim}</td><td class='nama-cell' title="${user.nama || ''}">${user.nama || ''}</td>`;
+                    html += `<tr><td class="sticky-col">${nim}</td><td class='nama-cell sticky-col-2' title="${user.nama || ''}">${user.nama || ''}</td>`;
                     tanggalArr.forEach(tgl => {
                         const tglIso = tgl.toISOString().slice(0,10);
                         // Sesi pagi
@@ -131,7 +144,7 @@
                     });
                     html += '</tr>';
                 });
-                html += '</table>';
+                html += '</table></div>';
             });
             html += '<div style="margin-top:1em"><span style="display:inline-block;width:20px;height:20px;background:#28a745;margin-right:5px;vertical-align:middle"></span>Hadir &nbsp; <span style="display:inline-block;width:20px;height:20px;background:#dc3545;margin-right:5px;vertical-align:middle"></span>Tidak Hadir &nbsp; <span style="display:inline-block;width:20px;height:20px;background:#fff;border:1px solid #ccc;margin-right:5px;vertical-align:middle"></span>Sesi belum berjalan</div>';
             document.getElementById('tableWrap').innerHTML = html;
