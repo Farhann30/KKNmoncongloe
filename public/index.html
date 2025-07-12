@@ -198,13 +198,15 @@
             soreStart.setHours(18,0,0,0);
             const soreEnd = new Date(now);
             soreEnd.setHours(21,0,0,0);
+
             if (now >= pagiStart && now <= pagiEnd) return { aktif: true, sesi: 'pagi', end: pagiEnd };
             if (now >= soreStart && now <= soreEnd) return { aktif: true, sesi: 'sore', end: soreEnd };
             if (now < pagiStart) return { aktif: false, sesi: 'pagi', start: pagiStart };
             if (now > pagiEnd && now < soreStart) return { aktif: false, sesi: 'sore', start: soreStart };
+            // Setelah sore, sesi berikutnya besok pagi
             const besokPagi = new Date(now);
             besokPagi.setDate(besokPagi.getDate() + 1);
-            besokPagi.setHours(21,0,0,0);
+            besokPagi.setHours(7,0,0,0);
             return { aktif: false, sesi: 'pagi', start: besokPagi };
         }
 
