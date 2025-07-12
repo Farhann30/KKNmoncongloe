@@ -246,11 +246,17 @@
             });
         }
 
+        window.sudahAbsenSesiIni = false;
+
         function updateCountdown() {
             const now = new Date();
             const session = getAbsenSession(now);
             const countdown = document.getElementById('countdown');
             const absenBtn = document.getElementById('absenBtn');
+            if (window.sudahAbsenSesiIni) {
+                absenBtn.style.display = 'none';
+                return;
+            }
             if (session.aktif) {
                 absenBtn.style.display = '';
                 absenBtn.disabled = false;
@@ -314,8 +320,10 @@
                 if (sudahAbsen) {
                     absenBtn.style.display = 'none';
                     status.textContent = 'Absen telah berhasil.';
+                    window.sudahAbsenSesiIni = true;
                 } else {
                     absenBtn.style.display = '';
+                    window.sudahAbsenSesiIni = false;
                 }
             });
             setInterval(updateCountdown, 1000);
@@ -335,6 +343,7 @@
             if (sudahAbsen) {
                 status.textContent = 'Absen telah berhasil.';
                 document.getElementById('absenBtn').style.display = 'none';
+                window.sudahAbsenSesiIni = true;
                 return;
             }
             const data = {
@@ -351,6 +360,7 @@
             .then(() => {
                 status.textContent = 'Absen telah berhasil.';
                 document.getElementById('absenBtn').style.display = 'none';
+                window.sudahAbsenSesiIni = true;
             })
             .catch((error) => {
                 status.textContent = 'Gagal absen: ' + error.message;
