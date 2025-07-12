@@ -319,19 +319,24 @@
                 userDesa = desa;
                 console.log('User desa:', desa);
                 ambilLokasiUser();
-                // Cek sudah absen sesi ini?
-                const { sesi, tanggal } = getSesiTanggalNow();
-                const sudahAbsen = await cekSudahAbsen(getLogin(), sesi, tanggal);
-                const absenBtn = document.getElementById('absenBtn');
-                const status = document.getElementById('status');
-                if (sudahAbsen) {
-                    absenBtn.style.display = 'none';
-                    status.textContent = 'Absen telah berhasil.';
-                    window.sudahAbsenSesiIni = true;
-                } else {
-                    absenBtn.style.display = '';
-                    window.sudahAbsenSesiIni = false;
-                }
+                // Cek sudah absen sesi ini? (ambil tanggal & sesi terbaru setiap kali load)
+                const cekAbsenSesiIni = async () => {
+                    const { sesi, tanggal } = getSesiTanggalNow();
+                    const sudahAbsen = await cekSudahAbsen(getLogin(), sesi, tanggal);
+                    const absenBtn = document.getElementById('absenBtn');
+                    const status = document.getElementById('status');
+                    if (sudahAbsen) {
+                        absenBtn.style.display = 'none';
+                        status.textContent = 'Absen telah berhasil.';
+                        window.sudahAbsenSesiIni = true;
+                    } else {
+                        absenBtn.style.display = '';
+                        window.sudahAbsenSesiIni = false;
+                    }
+                };
+                // Jalankan cek absen sesi ini setiap detik agar selalu update jika hari/sesi berubah
+                setInterval(cekAbsenSesiIni, 1000);
+                cekAbsenSesiIni();
             });
             setInterval(updateCountdown, 1000);
             updateCountdown();
@@ -344,7 +349,7 @@
                 status.textContent = 'Lokasi belum tersedia.';
                 return;
             }
-            // Cek sudah absen sesi ini?
+            // Cek sudah absen sesi ini? (ambil tanggal & sesi terbaru setiap klik)
             const { sesi, tanggal } = getSesiTanggalNow();
             const sudahAbsen = await cekSudahAbsen(getLogin(), sesi, tanggal);
             if (sudahAbsen) {
