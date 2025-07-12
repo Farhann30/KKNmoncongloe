@@ -164,7 +164,7 @@
             'Bonto Bunga': { lat: -5.138959, lon: 119.548104 },
             'Moncongloe Bulu': { lat: -5.148056, lon: 119.558239 }
         };
-        const RADIUS_METER = 150;
+        const RADIUS_METER = 500;
         let userLocation = null;
         let userDesa = null;
 
@@ -312,8 +312,10 @@
                 const absenBtn = document.getElementById('absenBtn');
                 const status = document.getElementById('status');
                 if (sudahAbsen) {
-                    absenBtn.disabled = true;
-                    status.textContent = 'Sudah absen sesi ini.';
+                    absenBtn.style.display = 'none';
+                    status.textContent = 'Absen telah berhasil.';
+                } else {
+                    absenBtn.style.display = '';
                 }
             });
             setInterval(updateCountdown, 1000);
@@ -331,8 +333,8 @@
             const { sesi, tanggal } = getSesiTanggalNow();
             const sudahAbsen = await cekSudahAbsen(getLogin(), sesi, tanggal);
             if (sudahAbsen) {
-                status.textContent = 'Sudah absen sesi ini.';
-                document.getElementById('absenBtn').disabled = true;
+                status.textContent = 'Absen telah berhasil.';
+                document.getElementById('absenBtn').style.display = 'none';
                 return;
             }
             const data = {
@@ -347,8 +349,8 @@
             status.textContent = 'Menyimpan data absensi...';
             db.collection("absensi").add(data)
             .then(() => {
-                status.textContent = 'Absensi berhasil!';
-                document.getElementById('absenBtn').disabled = true;
+                status.textContent = 'Absen telah berhasil.';
+                document.getElementById('absenBtn').style.display = 'none';
             })
             .catch((error) => {
                 status.textContent = 'Gagal absen: ' + error.message;
