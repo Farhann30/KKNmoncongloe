@@ -55,7 +55,6 @@
             <button id="adminBtn" class="hidden" style="background:#28a745; margin-top:1em;">Admin</button>
             <button id="logoutBtn" class="logout">Logout</button>
             <p id="status"></p>
-            <div id="rekapSaya" style="margin-top:2em"></div>
         </div>
     </div>
     <script>
@@ -303,53 +302,6 @@
 
         const ADMIN_NIMS = ['E051221065', 'D121221011'];
 
-        // Helper: generate tanggal dari 12 Juli sampai 16 Agustus
-        function getTanggalRange() {
-            const start = new Date('2025-07-12');
-            const end = new Date('2025-08-16');
-            const arr = [];
-            let d = new Date(start);
-            while (d <= end) {
-                arr.push(new Date(d));
-                d.setDate(d.getDate() + 1);
-            }
-            return arr;
-        }
-
-        async function tampilkanRekapSaya() {
-            const nim = getLogin();
-            if (!nim) return;
-            // Ambil semua absen user
-            const snap = await db.collection('absensi').where('nim', '==', nim).get();
-            const absenMap = {};
-            snap.forEach(doc => {
-                const d = doc.data();
-                if (!absenMap[d.tanggal]) absenMap[d.tanggal] = {};
-                absenMap[d.tanggal][d.sesi] = true;
-            });
-            const tanggalArr = getTanggalRange();
-            let html = '<table style="width:100%;border-collapse:collapse;margin-top:1em"><tr><th style="padding:4px 8px">Tanggal</th><th style="padding:4px 8px">Pagi</th><th style="padding:4px 8px">Sore</th></tr>';
-            tanggalArr.forEach(tgl => {
-                const tglIso = tgl.toISOString().slice(0,10);
-                html += `<tr><td style='padding:4px 8px'>${tgl.getDate()}/${tgl.getMonth()+1}</td>`;
-                // Sesi pagi
-                if (absenMap[tglIso] && absenMap[tglIso]['pagi']) {
-                    html += "<td style='color:#fff;background:#28a745;text-align:center;font-weight:bold'>✔️</td>";
-                } else {
-                    html += "<td style='color:#fff;background:#dc3545;text-align:center;font-weight:bold'>❌</td>";
-                }
-                // Sesi sore
-                if (absenMap[tglIso] && absenMap[tglIso]['sore']) {
-                    html += "<td style='color:#fff;background:#28a745;text-align:center;font-weight:bold'>✔️</td>";
-                } else {
-                    html += "<td style='color:#fff;background:#dc3545;text-align:center;font-weight:bold'>❌</td>";
-                }
-                html += '</tr>';
-            });
-            html += '</table>';
-            document.getElementById('rekapSaya').innerHTML = html;
-        }
-
         async function loadAbsenPage() {
             document.getElementById('userInfo').textContent = 'Login sebagai: ' + getLogin();
             // Tampilkan tombol admin jika NIM admin
@@ -388,7 +340,6 @@
             });
             setInterval(updateCountdown, 1000);
             updateCountdown();
-            tampilkanRekapSaya();
         }
 
         document.getElementById('absenBtn').onclick = async function() {
@@ -405,7 +356,6 @@
                 status.textContent = 'Absen telah berhasil.';
                 document.getElementById('absenBtn').style.display = 'none';
                 window.sudahAbsenSesiIni = true;
-                tampilkanRekapSaya();
                 return;
             }
             const data = {
@@ -423,7 +373,6 @@
                 status.textContent = 'Absen telah berhasil.';
                 document.getElementById('absenBtn').style.display = 'none';
                 window.sudahAbsenSesiIni = true;
-                tampilkanRekapSaya();
             })
             .catch((error) => {
                 status.textContent = 'Gagal absen: ' + error.message;
