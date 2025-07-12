@@ -78,13 +78,23 @@
                 document.getElementById('tableWrap').innerHTML = '<p>Belum ada data absensi.</p>';
                 return;
             }
-            // Pisahkan data per desa
+            // Pisahkan data per desa dan filter duplikat (1x per NIM per sesi per tanggal)
             const dataDesa = { 'Moncongloe': [], 'Bonto Bunga': [], 'Moncongloe Bulu': [] };
+            const absenMap = {}; // key: nim|sesi|tanggal
             snap.forEach(doc => {
                 const d = doc.data();
                 const user = userMap[d.nim] || {};
                 if (user.desa && dataDesa[user.desa]) {
-                    dataDesa[user.desa].push({ ...d, nama: user.nama, desa: user.desa });
+                    const key = `${d.nim}|${d.sesi}|${d.tanggal}`;
+                    if (!absenMap[key]) {
+                        absenMap[key] = { ...d, nama: user.nama, desa: user.desa };
+                    }
+                }
+            });
+            // Masukkan ke dataDesa
+            Object.values(absenMap).forEach(d => {
+                if (d.desa && dataDesa[d.desa]) {
+                    dataDesa[d.desa].push(d);
                 }
             });
             let html = '';
