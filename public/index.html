@@ -3,442 +3,564 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistem Absensi Firebase</title>
+    <title>Sistem Absensi</title>
     <style>
-        body { font-family: Arial, sans-serif; background: #f4f4f4; display: flex; justify-content: center; align-items: center; height: 100vh; }
-        .absen-box { background: #fff; padding: 2em; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); min-width: 320px; }
-        #countdown { font-size: 1.2em; margin-bottom: 1em; }
-        button { padding: 0.5em; margin-top: 1em; width: 100%; background: #007bff; color: #fff; border: none; border-radius: 4px; cursor: pointer; }
-        button:disabled { background: #aaa; }
-        input { width: 100%; padding: 0.5em; margin-top: 0.5em; margin-bottom: 0.5em; }
-        .hidden { display: none; }
-        .logout { background: #dc3545; margin-top: 1em; }
-        .switch-link { color: #007bff; cursor: pointer; text-decoration: underline; display: block; margin-top: 1em; text-align: center; }
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            width: 100%;
+            margin-top: 10px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        .status {
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+            text-align: center;
+            font-weight: bold;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        .warning {
+            background-color: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+        .hidden {
+            display: none;
+        }
+        .countdown {
+            font-size: 18px;
+            font-weight: bold;
+            color: #007bff;
+            text-align: center;
+            margin: 20px 0;
+        }
+        .location-info {
+            background-color: #e9ecef;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-size: 14px;
+        }
+        .admin-link {
+            text-align: center;
+            margin-top: 20px;
+        }
+        .admin-link a {
+            color: #007bff;
+            text-decoration: none;
+        }
+        .admin-link a:hover {
+            text-decoration: underline;
+        }
     </style>
-    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 </head>
 <body>
-    <div class="absen-box">
-        <!-- Register -->
-        <div id="registerPage" class="hidden">
-            <h2>Daftar Akun</h2>
-            <input type="text" id="regNama" placeholder="Nama" autocomplete="off" />
-            <input type="text" id="regNim" placeholder="NIM" autocomplete="off" />
-            <select id="regDesa">
-                <option value="">Pilih Desa</option>
-                <option value="Moncongloe">Moncongloe</option>
-                <option value="Moncongloe Bulu">Moncongloe Bulu</option>
-                <option value="Bonto Bunga">Bonto Bunga</option>
-            </select>
-            <input type="text" id="regFakultas" placeholder="Fakultas" autocomplete="off" />
-            <input type="password" id="regPassword" placeholder="Password" />
-            <button id="registerBtn">Daftar</button>
-            <p id="registerStatus"></p>
-            <span class="switch-link" onclick="showLogin()">Sudah punya akun? Login</span>
+    <div class="container">
+        <h1>📋 Sistem Absensi</h1>
+        
+        <!-- Login Form -->
+        <div id="loginForm">
+            <h2>🔐 Login</h2>
+            <div class="form-group">
+                <label for="loginNim">NIM:</label>
+                <input type="text" id="loginNim" placeholder="Masukkan NIM" required>
+            </div>
+            <div class="form-group">
+                <label for="loginPassword">Password:</label>
+                <input type="password" id="loginPassword" placeholder="Masukkan password" required>
+            </div>
+            <button onclick="login()">Login</button>
+            <p style="text-align: center; margin-top: 15px;">
+                Belum punya akun? <a href="#" onclick="showRegister()">Register</a>
+            </p>
         </div>
-        <!-- Login -->
-        <div id="loginPage" class="hidden">
-            <h2>Login</h2>
-            <input type="text" id="loginNim" placeholder="NIM" autocomplete="off" />
-            <input type="password" id="loginPassword" placeholder="Password" />
-            <button id="loginBtn">Login</button>
-            <p id="loginStatus"></p>
-            <span class="switch-link" onclick="showRegister()">Belum punya akun? Daftar</span>
+
+        <!-- Register Form -->
+        <div id="registerForm" class="hidden">
+            <h2>📝 Register</h2>
+            <div class="form-group">
+                <label for="registerNim">NIM:</label>
+                <input type="text" id="registerNim" placeholder="Masukkan NIM" required>
+            </div>
+            <div class="form-group">
+                <label for="registerPassword">Password:</label>
+                <input type="password" id="registerPassword" placeholder="Masukkan password" required>
+            </div>
+            <div class="form-group">
+                <label for="registerNama">Nama Lengkap:</label>
+                <input type="text" id="registerNama" placeholder="Masukkan nama lengkap" required>
+            </div>
+            <div class="form-group">
+                <label for="registerDesa">Desa:</label>
+                <select id="registerDesa" required>
+                    <option value="">Pilih Desa</option>
+                    <option value="Desa A">Desa A</option>
+                    <option value="Desa B">Desa B</option>
+                    <option value="Desa C">Desa C</option>
+                    <option value="Desa D">Desa D</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="registerFakultas">Fakultas:</label>
+                <input type="text" id="registerFakultas" placeholder="Masukkan fakultas" required>
+            </div>
+            <button onclick="register()">Register</button>
+            <p style="text-align: center; margin-top: 15px;">
+                Sudah punya akun? <a href="#" onclick="showLogin()">Login</a>
+            </p>
         </div>
-        <!-- Absensi -->
-        <div id="absenPage" class="hidden">
-            <h2>Absensi Kehadiran</h2>
-            <div id="userInfo"></div>
-            <div id="countdown"></div>
-            <button id="absenBtn" style="display:none">Absen</button>
-            <button id="adminBtn" class="hidden" style="background:#28a745; margin-top:1em;">Admin</button>
-            <button id="logoutBtn" class="logout">Logout</button>
-            <p id="status"></p>
-            <div id="rekapSaya" style="margin-top:2em"></div>
+
+        <!-- Absen Form -->
+        <div id="absenForm" class="hidden">
+            <h2>✅ Absen</h2>
+            <div id="userInfo" class="info"></div>
+            
+            <div class="countdown" id="countdown"></div>
+            
+            <div class="location-info" id="locationInfo">
+                <strong>📍 Lokasi:</strong> <span id="locationText">Mengambil lokasi...</span>
+            </div>
+            
+            <div class="form-group">
+                <label for="nama">Nama:</label>
+                <input type="text" id="nama" readonly>
+            </div>
+            
+            <button id="absenButton" onclick="absen()" disabled>
+                Absen
+            </button>
+            
+            <div id="absenStatus"></div>
+            
+            <button onclick="logout()" style="background-color: #dc3545; margin-top: 20px;">
+                Logout
+            </button>
+            
+            <div class="admin-link">
+                <a href="admin.html" target="_blank">📊 Admin Dashboard</a>
+            </div>
         </div>
     </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
+
     <script>
-        // Firebase config
+        // Firebase configuration
         const firebaseConfig = {
-          apiKey: "AIzaSyCtER1JtiUgxMNu0H4CIr9zyCqK6CTrG1M",
-          authDomain: "kknmoncongloe-952e7.firebaseapp.com",
-          projectId: "kknmoncongloe-952e7",
-          storageBucket: "kknmoncongloe-952e7.firebasestorage.app",
-          messagingSenderId: "633205686416",
-          appId: "1:633205686416:web:af782584f38ec285c15815",
-          measurementId: "G-Q6MKWYT9PG"
+            apiKey: "AIzaSyBXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+            authDomain: "sistem-absen-xxxxx.firebaseapp.com",
+            projectId: "sistem-absen-xxxxx",
+            storageBucket: "sistem-absen-xxxxx.appspot.com",
+            messagingSenderId: "123456789",
+            appId: "1:123456789:web:abcdef123456"
         };
+
+        // Initialize Firebase
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
 
-        // UI helpers
-        function showRegister() {
-            document.getElementById('registerPage').classList.remove('hidden');
-            document.getElementById('loginPage').classList.add('hidden');
-            document.getElementById('absenPage').classList.add('hidden');
-        }
-        function showLogin() {
-            document.getElementById('registerPage').classList.add('hidden');
-            document.getElementById('loginPage').classList.remove('hidden');
-            document.getElementById('absenPage').classList.add('hidden');
-        }
-        function showAbsen() {
-            document.getElementById('registerPage').classList.add('hidden');
-            document.getElementById('loginPage').classList.add('hidden');
-            document.getElementById('absenPage').classList.remove('hidden');
-        }
-
-        // Device ID
-        function getDeviceId() {
-            let deviceId = localStorage.getItem('device_id');
-            if (!deviceId) {
-                deviceId = crypto.randomUUID();
-                localStorage.setItem('device_id', deviceId);
-            }
-            return deviceId;
-        }
-
-        // Auth helpers
-        function setLogin(nim) {
-            localStorage.setItem('login_nim', nim);
-        }
-        function getLogin() {
-            return localStorage.getItem('login_nim');
-        }
-        function logout() {
-            localStorage.removeItem('login_nim');
-            location.reload();
-        }
-
-        // Register
-        document.getElementById('registerBtn').onclick = async function() {
-            const nama = document.getElementById('regNama').value.trim();
-            const nim = document.getElementById('regNim').value.trim();
-            const desa = document.getElementById('regDesa').value;
-            const fakultas = document.getElementById('regFakultas').value.trim();
-            const password = document.getElementById('regPassword').value;
-            const status = document.getElementById('registerStatus');
-            status.textContent = 'Mendaftarkan...';
-            if (!nama || !nim || !desa || !fakultas || !password) {
-                status.textContent = 'Semua field wajib diisi!';
-                return;
-            }
-            // Cek NIM sudah ada?
-            const snap = await db.collection('users').where('nim', '==', nim).get();
-            if (!snap.empty) {
-                status.textContent = 'NIM sudah terdaftar!';
-                return;
-            }
-            await db.collection('users').add({ nama, nim, desa, fakultas, password });
-            status.textContent = 'Berhasil daftar! Silakan login.';
-            setTimeout(showLogin, 1000);
-        };
-
-        // Login
-        document.getElementById('loginBtn').onclick = async function() {
-            const nim = document.getElementById('loginNim').value.trim();
-            const password = document.getElementById('loginPassword').value;
-            const status = document.getElementById('loginStatus');
-            status.textContent = 'Memeriksa...';
-            if (!nim || !password) {
-                status.textContent = 'NIM dan password wajib diisi!';
-                return;
-            }
-            const snap = await db.collection('users').where('nim', '==', nim).where('password', '==', password).get();
-            if (snap.empty) {
-                status.textContent = 'NIM atau password salah!';
-                return;
-            }
-            setLogin(nim);
-            showAbsen();
-            loadAbsenPage();
-        };
-
-        // Logout
-        document.getElementById('logoutBtn').onclick = logout;
-
-        // Absensi
-        // Koordinat posko per desa
-        const POSKO_COORDS = {
-            'Moncongloe': { lat: -5.135274, lon: 119.536531 },
-            'Bonto Bunga': { lat: -5.138959, lon: 119.548104 },
-            'Moncongloe Bulu': { lat: -5.148056, lon: 119.558239 }
-        };
-        const RADIUS_METER = 500;
+        let currentUser = null;
         let userLocation = null;
-        let userDesa = null;
+        let countdownInterval = null;
 
-        // Ambil data desa user dari Firestore setelah login
-        async function getUserDesa(nim) {
-            const snap = await db.collection('users').where('nim', '==', nim).get();
-            if (!snap.empty) {
-                return snap.docs[0].data().desa;
-            }
-            return null;
-        }
-
-        function getDistanceFromLatLonInMeters(lat1, lon1, lat2, lon2) {
-            const R = 6371000;
-            const dLat = (lat2-lat1) * Math.PI/180;
-            const dLon = (lon2-lon1) * Math.PI/180;
-            const a =
-                Math.sin(dLat/2) * Math.sin(dLat/2) +
-                Math.cos(lat1 * Math.PI/180) * Math.cos(lat2 * Math.PI/180) *
-                Math.sin(dLon/2) * Math.sin(dLon/2);
-            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-            return R * c;
-        }
-
-        function getAbsenSession(now) {
-            const pagiStart = new Date(now);
-            pagiStart.setHours(7,0,0,0);
-            const pagiEnd = new Date(now);
-            pagiEnd.setHours(9,0,0,0);
-            const soreStart = new Date(now);
-            soreStart.setHours(18,0,0,0);
-            const soreEnd = new Date(now);
-            soreEnd.setHours(21,0,0,0);
-
-            if (now >= pagiStart && now <= pagiEnd) return { aktif: true, sesi: 'pagi', end: pagiEnd };
-            if (now >= soreStart && now <= soreEnd) return { aktif: true, sesi: 'sore', end: soreEnd };
-            if (now < pagiStart) return { aktif: false, sesi: 'pagi', start: pagiStart };
-            if (now > pagiEnd && now < soreStart) return { aktif: false, sesi: 'sore', start: soreStart };
-            // Setelah sore, sesi berikutnya besok pagi
-            const besokPagi = new Date(now);
-            besokPagi.setDate(besokPagi.getDate() + 1);
-            besokPagi.setHours(7,0,0,0);
-            return { aktif: false, sesi: 'pagi', start: besokPagi };
-        }
-
-        function cekLokasiDanUpdateAbsenBtn() {
-            const absenBtn = document.getElementById('absenBtn');
-            const status = document.getElementById('status');
-            if (!userLocation || !userDesa || !POSKO_COORDS[userDesa]) {
-                absenBtn.disabled = true;
-                status.textContent = 'Mengambil lokasi atau data desa...';
-                return;
-            }
-            const posko = POSKO_COORDS[userDesa];
-            const jarak = getDistanceFromLatLonInMeters(userLocation.lat, userLocation.lon, posko.lat, posko.lon);
-            if (jarak <= RADIUS_METER) {
-                absenBtn.disabled = false;
-                status.textContent = '';
-            } else {
-                absenBtn.disabled = true;
-                status.textContent = `Anda di luar radius posko ${userDesa} (${Math.round(jarak)} meter). Absen hanya bisa di dalam radius 150 meter.`;
-            }
-        }
-
-        // Ambil lokasi user saat load
-        function ambilLokasiUser() {
-            if (!navigator.geolocation) {
-                document.getElementById('status').textContent = 'Geolocation tidak didukung browser.';
-                return;
-            }
-            navigator.geolocation.getCurrentPosition(function(pos) {
-                userLocation = {
-                    lat: pos.coords.latitude,
-                    lon: pos.coords.longitude
-                };
-                console.log('Lokasi user:', userLocation);
-                cekLokasiDanUpdateAbsenBtn();
-            }, function(error) {
-                document.getElementById('status').textContent = 'Gagal mengambil lokasi: ' + error.message;
-                console.log('Geolocation error:', error);
-            });
-        }
-
-        window.sudahAbsenSesiIni = false;
-
-        function updateCountdown() {
-            const now = new Date();
-            const session = getAbsenSession(now);
-            const countdown = document.getElementById('countdown');
-            const absenBtn = document.getElementById('absenBtn');
-            // Update countdown text SELALU
-            if (session.aktif) {
-                const sisa = Math.floor((session.end - now) / 1000);
-                const jam = Math.floor(sisa / 3600);
-                const menit = Math.floor((sisa % 3600) / 60);
-                const detik = sisa % 60;
-                countdown.textContent = `Sesi absen ${session.sesi} aktif. Sisa waktu: ${jam.toString().padStart(2,'0')}:${menit.toString().padStart(2,'0')}:${detik.toString().padStart(2,'0')}`;
-            } else {
-                const sisa = Math.floor((session.start - now) / 1000);
-                const jam = Math.floor(sisa / 3600);
-                const menit = Math.floor((sisa % 3600) / 60);
-                const detik = sisa % 60;
-                countdown.textContent = `Sesi absen ${session.sesi} akan dibuka dalam: ${jam.toString().padStart(2,'0')}:${menit.toString().padStart(2,'0')}:${detik.toString().padStart(2,'0')}`;
-            }
-            // Atur tombol absen
-            if (window.sudahAbsenSesiIni) {
-                absenBtn.style.display = 'none';
-            } else if (session.aktif) {
-                absenBtn.style.display = '';
-                absenBtn.disabled = false;
-            } else {
-                absenBtn.style.display = 'none';
-            }
-            cekLokasiDanUpdateAbsenBtn();
-        }
-
-        // Cek apakah user sudah absen sesi ini
-        async function cekSudahAbsen(nim, sesi, tanggal) {
-            const snap = await db.collection('absensi')
-                .where('nim', '==', nim)
-                .where('sesi', '==', sesi)
-                .where('tanggal', '==', tanggal)
-                .get();
-            return !snap.empty;
-        }
-
-        // Helper untuk dapatkan sesi dan tanggal hari ini
-        function getSesiTanggalNow() {
-            const now = new Date();
-            const session = getAbsenSession(now);
-            const sesi = session.sesi;
-            const tanggal = now.toISOString().slice(0,10); // yyyy-mm-dd
-            return { sesi, tanggal };
-        }
-
-        const ADMIN_NIMS = ['E051221065', 'D121221011'];
-
-        // Helper: generate tanggal dari 12 Juli sampai 16 Agustus
-        function getTanggalRange() {
-            const start = new Date('2025-07-12');
-            const end = new Date('2025-08-16');
-            const arr = [];
-            let d = new Date(start);
-            while (d <= end) {
-                arr.push(new Date(d));
-                d.setDate(d.getDate() + 1);
-            }
-            return arr;
-        }
-
-        async function tampilkanRekapSaya() {
-            const nim = getLogin();
-            if (!nim) return;
-            // Ambil semua absen user
-            const snap = await db.collection('absensi').where('nim', '==', nim).get();
-            const absenMap = {};
-            snap.forEach(doc => {
-                const d = doc.data();
-                if (!absenMap[d.tanggal]) absenMap[d.tanggal] = {};
-                absenMap[d.tanggal][d.sesi] = true;
-            });
-            const tanggalArr = getTanggalRange();
-            let html = '<table style="width:100%;border-collapse:collapse;margin-top:1em"><tr><th style="padding:4px 8px">Tanggal</th><th style="padding:4px 8px">Pagi</th><th style="padding:4px 8px">Sore</th></tr>';
-            tanggalArr.forEach(tgl => {
-                const tglIso = tgl.toISOString().slice(0,10);
-                html += `<tr><td style='padding:4px 8px'>${tgl.getDate()}/${tgl.getMonth()+1}</td>`;
-                // Sesi pagi
-                if (absenMap[tglIso] && absenMap[tglIso]['pagi']) {
-                    html += "<td style='color:#fff;background:#28a745;text-align:center;font-weight:bold'>✔️</td>";
-                } else {
-                    html += "<td style='color:#fff;background:#dc3545;text-align:center;font-weight:bold'>❌</td>";
-                }
-                // Sesi sore
-                if (absenMap[tglIso] && absenMap[tglIso]['sore']) {
-                    html += "<td style='color:#fff;background:#28a745;text-align:center;font-weight:bold'>✔️</td>";
-                } else {
-                    html += "<td style='color:#fff;background:#dc3545;text-align:center;font-weight:bold'>❌</td>";
-                }
-                html += '</tr>';
-            });
-            html += '</table>';
-            document.getElementById('rekapSaya').innerHTML = html;
-        }
-
-        async function loadAbsenPage() {
-            document.getElementById('userInfo').textContent = 'Login sebagai: ' + getLogin();
-            // Tampilkan tombol admin jika NIM admin
-            const adminBtn = document.getElementById('adminBtn');
-            if (ADMIN_NIMS.includes(getLogin())) {
-                adminBtn.classList.remove('hidden');
-            } else {
-                adminBtn.classList.add('hidden');
-            }
-            adminBtn.onclick = function() {
-                window.open('admin.html', '_blank');
-            };
-            // Ambil desa user dari Firestore
-            getUserDesa(getLogin()).then(async desa => {
-                userDesa = desa;
-                console.log('User desa:', desa);
-                ambilLokasiUser();
-                // Cek sudah absen sesi ini? (ambil tanggal & sesi terbaru setiap kali load)
-                const cekAbsenSesiIni = async () => {
-                    const { sesi, tanggal } = getSesiTanggalNow();
-                    const sudahAbsen = await cekSudahAbsen(getLogin(), sesi, tanggal);
-                    const absenBtn = document.getElementById('absenBtn');
-                    const status = document.getElementById('status');
-                    if (sudahAbsen) {
-                        absenBtn.style.display = 'none';
-                        status.textContent = 'Absen telah berhasil.';
-                        window.sudahAbsenSesiIni = true;
-                    } else {
-                        absenBtn.style.display = '';
-                        window.sudahAbsenSesiIni = false;
-                    }
-                };
-                // Jalankan cek absen sesi ini setiap detik agar selalu update jika hari/sesi berubah
-                setInterval(cekAbsenSesiIni, 1000);
-                cekAbsenSesiIni();
-            });
-            setInterval(updateCountdown, 1000);
-            updateCountdown();
-            tampilkanRekapSaya();
-        }
-
-        document.getElementById('absenBtn').onclick = async function() {
-            const status = document.getElementById('status');
-            status.textContent = 'Mengambil lokasi...';
-            if (!userLocation) {
-                status.textContent = 'Lokasi belum tersedia.';
-                return;
-            }
-            // Cek sudah absen sesi ini? (ambil tanggal & sesi terbaru setiap klik)
-            const { sesi, tanggal } = getSesiTanggalNow();
-            const sudahAbsen = await cekSudahAbsen(getLogin(), sesi, tanggal);
-            if (sudahAbsen) {
-                status.textContent = 'Absen telah berhasil.';
-                document.getElementById('absenBtn').style.display = 'none';
-                window.sudahAbsenSesiIni = true;
-                tampilkanRekapSaya();
-                return;
-            }
-            const data = {
-                nim: getLogin(),
-                deviceId: getDeviceId(),
-                waktu: new Date().toISOString(),
-                latitude: userLocation.lat,
-                longitude: userLocation.lon,
-                sesi,
-                tanggal
-            };
-            status.textContent = 'Menyimpan data absensi...';
-            db.collection("absensi").add(data)
-            .then(() => {
-                status.textContent = 'Absen telah berhasil.';
-                document.getElementById('absenBtn').style.display = 'none';
-                window.sudahAbsenSesiIni = true;
-                tampilkanRekapSaya();
-            })
-            .catch((error) => {
-                status.textContent = 'Gagal absen: ' + error.message;
-            });
-        };
-
-        // Routing awal
-        window.onload = function() {
-            if (getLogin()) {
-                showAbsen();
-                loadAbsenPage();
+        // Check if user is logged in
+        function checkAuth() {
+            const user = localStorage.getItem('currentUser');
+            if (user) {
+                currentUser = JSON.parse(user);
+                showAbsenForm();
             } else {
                 showLogin();
             }
-        };
+        }
+
+        // Show login form
+        function showLogin() {
+            document.getElementById('loginForm').classList.remove('hidden');
+            document.getElementById('registerForm').classList.add('hidden');
+            document.getElementById('absenForm').classList.add('hidden');
+        }
+
+        // Show register form
+        function showRegister() {
+            document.getElementById('loginForm').classList.add('hidden');
+            document.getElementById('registerForm').classList.remove('hidden');
+            document.getElementById('absenForm').classList.add('hidden');
+        }
+
+        // Show absen form
+        function showAbsenForm() {
+            document.getElementById('loginForm').classList.add('hidden');
+            document.getElementById('registerForm').classList.add('hidden');
+            document.getElementById('absenForm').classList.remove('hidden');
+            
+            document.getElementById('nama').value = currentUser.nama;
+            document.getElementById('userInfo').innerHTML = `
+                <strong>👤 User:</strong> ${currentUser.nama} (${currentUser.nim})<br>
+                <strong>🏘️ Desa:</strong> ${currentUser.desa}<br>
+                <strong>🎓 Fakultas:</strong> ${currentUser.fakultas}
+            `;
+            
+            getLocation();
+            startCountdown();
+            checkTodayAbsen();
+        }
+
+        // Register function
+        async function register() {
+            const nim = document.getElementById('registerNim').value;
+            const password = document.getElementById('registerPassword').value;
+            const nama = document.getElementById('registerNama').value;
+            const desa = document.getElementById('registerDesa').value;
+            const fakultas = document.getElementById('registerFakultas').value;
+
+            if (!nim || !password || !nama || !desa || !fakultas) {
+                alert('Semua field harus diisi!');
+                return;
+            }
+
+            try {
+                // Check if NIM already exists
+                const userDoc = await db.collection('users').doc(nim).get();
+                if (userDoc.exists) {
+                    alert('NIM sudah terdaftar!');
+                    return;
+                }
+
+                // Save user data
+                await db.collection('users').doc(nim).set({
+                    nim: nim,
+                    password: password,
+                    nama: nama,
+                    desa: desa,
+                    fakultas: fakultas,
+                    createdAt: new Date()
+                });
+
+                alert('Register berhasil! Silakan login.');
+                showLogin();
+            } catch (error) {
+                console.error('Error registering:', error);
+                alert('Error saat register: ' + error.message);
+            }
+        }
+
+        // Login function
+        async function login() {
+            const nim = document.getElementById('loginNim').value;
+            const password = document.getElementById('loginPassword').value;
+
+            if (!nim || !password) {
+                alert('NIM dan password harus diisi!');
+                return;
+            }
+
+            try {
+                const userDoc = await db.collection('users').doc(nim).get();
+                if (!userDoc.exists) {
+                    alert('NIM tidak ditemukan!');
+                    return;
+                }
+
+                const userData = userDoc.data();
+                if (userData.password !== password) {
+                    alert('Password salah!');
+                    return;
+                }
+
+                currentUser = userData;
+                localStorage.setItem('currentUser', JSON.stringify(userData));
+                showAbsenForm();
+            } catch (error) {
+                console.error('Error logging in:', error);
+                alert('Error saat login: ' + error.message);
+            }
+        }
+
+        // Logout function
+        function logout() {
+            currentUser = null;
+            localStorage.removeItem('currentUser');
+            if (countdownInterval) {
+                clearInterval(countdownInterval);
+            }
+            showLogin();
+        }
+
+        // Get location
+        function getLocation() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        userLocation = {
+                            lat: position.coords.latitude,
+                            lng: position.coords.longitude
+                        };
+                        document.getElementById('locationText').textContent = 
+                            `${userLocation.lat.toFixed(6)}, ${userLocation.lng.toFixed(6)}`;
+                        checkAbsenButton();
+                    },
+                    (error) => {
+                        console.error('Error getting location:', error);
+                        document.getElementById('locationText').textContent = 'Error mengambil lokasi';
+                    }
+                );
+            } else {
+                document.getElementById('locationText').textContent = 'Geolocation tidak didukung';
+            }
+        }
+
+        // Check if absen button should be enabled
+        function checkAbsenButton() {
+            const now = new Date();
+            const hour = now.getHours();
+            const minute = now.getMinutes();
+            const currentTime = hour * 60 + minute;
+
+            // Absen pagi: 07:00 - 09:00 (420 - 540 menit)
+            // Absen sore: 17:00 - 18:00 (1020 - 1080 menit)
+            const isAbsenTime = (currentTime >= 420 && currentTime <= 540) || 
+                               (currentTime >= 1020 && currentTime <= 1080);
+
+            const absenButton = document.getElementById('absenButton');
+            if (isAbsenTime && userLocation) {
+                absenButton.disabled = false;
+                absenButton.textContent = 'Absen';
+            } else {
+                absenButton.disabled = true;
+                if (!isAbsenTime) {
+                    absenButton.textContent = 'Bukan jam absen';
+                } else {
+                    absenButton.textContent = 'Menunggu lokasi...';
+                }
+            }
+        }
+
+        // Calculate distance between two points
+        function calculateDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371; // Radius bumi dalam km
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                     Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                     Math.sin(dLon/2) * Math.sin(dLon/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            const distance = R * c;
+            return distance * 1000; // Convert to meters
+        }
+
+        // Absen function
+        async function absen() {
+            if (!userLocation) {
+                alert('Lokasi belum tersedia!');
+                return;
+            }
+
+            // Posko coordinates (ganti dengan koordinat posko yang sebenarnya)
+            const poskoLat = -6.2088;
+            const poskoLng = 106.8456;
+            
+            const distance = calculateDistance(
+                userLocation.lat, userLocation.lng,
+                poskoLat, poskoLng
+            );
+
+            if (distance > 150) {
+                alert(`Anda terlalu jauh dari posko! Jarak: ${distance.toFixed(0)} meter (maksimal 150 meter)`);
+                return;
+            }
+
+            const now = new Date();
+            const hour = now.getHours();
+            const minute = now.getMinutes();
+            const currentTime = hour * 60 + minute;
+
+            let sesi;
+            if (currentTime >= 420 && currentTime <= 540) {
+                sesi = 'pagi';
+            } else if (currentTime >= 1020 && currentTime <= 1080) {
+                sesi = 'sore';
+            } else {
+                alert('Bukan jam absen!');
+                return;
+            }
+
+            const today = now.toISOString().split('T')[0];
+
+            try {
+                // Check if already absen today for this session
+                const absenDoc = await db.collection('absensi')
+                    .where('nim', '==', currentUser.nim)
+                    .where('tanggal', '==', today)
+                    .where('sesi', '==', sesi)
+                    .get();
+
+                if (!absenDoc.empty) {
+                    alert(`Anda sudah absen ${sesi} hari ini!`);
+                    return;
+                }
+
+                // Save absen data
+                await db.collection('absensi').add({
+                    nim: currentUser.nim,
+                    nama: currentUser.nama,
+                    desa: currentUser.desa,
+                    fakultas: currentUser.fakultas,
+                    tanggal: today,
+                    sesi: sesi,
+                    waktu: now.toISOString(),
+                    lokasi: {
+                        lat: userLocation.lat,
+                        lng: userLocation.lng
+                    },
+                    jarak: distance
+                });
+
+                document.getElementById('absenStatus').innerHTML = 
+                    `<div class="status success">✅ Absen ${sesi} berhasil! (${now.toLocaleTimeString()})</div>`;
+                
+                document.getElementById('absenButton').disabled = true;
+                document.getElementById('absenButton').textContent = 'Sudah absen';
+                
+                checkTodayAbsen();
+            } catch (error) {
+                console.error('Error saving absen:', error);
+                alert('Error saat absen: ' + error.message);
+            }
+        }
+
+        // Check today's absen status
+        async function checkTodayAbsen() {
+            const today = new Date().toISOString().split('T')[0];
+            
+            try {
+                const absenDocs = await db.collection('absensi')
+                    .where('nim', '==', currentUser.nim)
+                    .where('tanggal', '==', today)
+                    .get();
+
+                let statusHtml = '<div class="status info"><strong>Status Absen Hari Ini:</strong><br>';
+                
+                const pagiAbsen = absenDocs.docs.find(doc => doc.data().sesi === 'pagi');
+                const soreAbsen = absenDocs.docs.find(doc => doc.data().sesi === 'sore');
+                
+                statusHtml += `🌅 Pagi: ${pagiAbsen ? '✅ Sudah absen (' + new Date(pagiAbsen.data().waktu).toLocaleTimeString() + ')' : '❌ Belum absen'}<br>`;
+                statusHtml += `🌆 Sore: ${soreAbsen ? '✅ Sudah absen (' + new Date(soreAbsen.data().waktu).toLocaleTimeString() + ')' : '❌ Belum absen'}`;
+                statusHtml += '</div>';
+                
+                document.getElementById('absenStatus').innerHTML = statusHtml;
+            } catch (error) {
+                console.error('Error checking absen status:', error);
+            }
+        }
+
+        // Countdown function
+        function startCountdown() {
+            function updateCountdown() {
+                const now = new Date();
+                const hour = now.getHours();
+                const minute = now.getMinutes();
+                const currentTime = hour * 60 + minute;
+
+                let nextSession, nextTime;
+                
+                if (currentTime < 420) { // Before 07:00
+                    nextSession = 'pagi';
+                    nextTime = 420; // 07:00
+                } else if (currentTime < 540) { // Before 09:00
+                    nextSession = 'pagi';
+                    nextTime = 540; // 09:00
+                } else if (currentTime < 1020) { // Before 17:00
+                    nextSession = 'sore';
+                    nextTime = 1020; // 17:00
+                } else if (currentTime < 1080) { // Before 18:00
+                    nextSession = 'sore';
+                    nextTime = 1080; // 18:00
+                } else { // After 18:00
+                    nextSession = 'pagi';
+                    nextTime = 420 + 1440; // Tomorrow 07:00
+                }
+
+                const timeLeft = nextTime - currentTime;
+                const hours = Math.floor(timeLeft / 60);
+                const minutes = timeLeft % 60;
+
+                document.getElementById('countdown').innerHTML = 
+                    `⏰ Sesi ${nextSession} berikutnya: ${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+                
+                checkAbsenButton();
+            }
+
+            updateCountdown();
+            countdownInterval = setInterval(updateCountdown, 1000);
+        }
+
+        // Initialize
+        checkAuth();
     </script>
 </body>
 </html> 
