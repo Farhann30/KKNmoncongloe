@@ -270,7 +270,26 @@
             cekLokasiDanUpdateAbsenBtn();
         }
 
-        function loadAbsenPage() {
+        // Cek apakah user sudah absen sesi ini
+        async function cekSudahAbsen(nim, sesi, tanggal) {
+            const snap = await db.collection('absensi')
+                .where('nim', '==', nim)
+                .where('sesi', '==', sesi)
+                .where('tanggal', '==', tanggal)
+                .get();
+            return !snap.empty;
+        }
+
+        // Helper untuk dapatkan sesi dan tanggal hari ini
+        function getSesiTanggalNow() {
+            const now = new Date();
+            const session = getAbsenSession(now);
+            const sesi = session.sesi;
+            const tanggal = now.toISOString().slice(0,10); // yyyy-mm-dd
+            return { sesi, tanggal };
+        }
+
+        async function loadAbsenPage() {
             document.getElementById('userInfo').textContent = 'Login sebagai: ' + getLogin();
             // Tampilkan tombol admin jika NIM admin
             const adminBtn = document.getElementById('adminBtn');
@@ -283,20 +302,37 @@
                 window.open('admin.html', '_blank');
             };
             // Ambil desa user dari Firestore
-            getUserDesa(getLogin()).then(desa => {
+            getUserDesa(getLogin()).then(async desa => {
                 userDesa = desa;
                 console.log('User desa:', desa);
                 ambilLokasiUser();
+                // Cek sudah absen sesi ini?
+                const { sesi, tanggal } = getSesiTanggalNow();
+                const sudahAbsen = await cekSudahAbsen(getLogin(), sesi, tanggal);
+                const absenBtn = document.getElementById('absenBtn');
+                const status = document.getElementById('status');
+                if (sudahAbsen) {
+                    absenBtn.disabled = true;
+                    status.textContent = 'Sudah absen sesi ini.';
+                }
             });
             setInterval(updateCountdown, 1000);
             updateCountdown();
         }
 
-        document.getElementById('absenBtn').onclick = function() {
+        document.getElementById('absenBtn').onclick = async function() {
             const status = document.getElementById('status');
             status.textContent = 'Mengambil lokasi...';
             if (!userLocation) {
                 status.textContent = 'Lokasi belum tersedia.';
+                return;
+            }
+            // Cek sudah absen sesi ini?
+            const { sesi, tanggal } = getSesiTanggalNow();
+            const sudahAbsen = await cekSudahAbsen(getLogin(), sesi, tanggal);
+            if (sudahAbsen) {
+                status.textContent = 'Sudah absen sesi ini.';
+                document.getElementById('absenBtn').disabled = true;
                 return;
             }
             const data = {
@@ -304,12 +340,15 @@
                 deviceId: getDeviceId(),
                 waktu: new Date().toISOString(),
                 latitude: userLocation.lat,
-                longitude: userLocation.lon
+                longitude: userLocation.lon,
+                sesi,
+                tanggal
             };
             status.textContent = 'Menyimpan data absensi...';
             db.collection("absensi").add(data)
             .then(() => {
                 status.textContent = 'Absensi berhasil!';
+                document.getElementById('absenBtn').disabled = true;
             })
             .catch((error) => {
                 status.textContent = 'Gagal absen: ' + error.message;

@@ -63,23 +63,44 @@
             loadAbsensi();
         }
 
-        // Load data absensi
-        function loadAbsensi() {
-            db.collection('absensi').orderBy('waktu', 'desc').get().then(snap => {
-                if (snap.empty) {
-                    document.getElementById('tableWrap').innerHTML = '<p>Belum ada data absensi.</p>';
-                    return;
-                }
-                let html = '<table><tr><th>NIM</th><th>Device ID</th><th>Waktu</th><th>Latitude</th><th>Longitude</th></tr>';
-                snap.forEach(doc => {
-                    const d = doc.data();
-                    html += `<tr><td>${d.nim || ''}</td><td>${d.deviceId || ''}</td><td>${d.waktu ? new Date(d.waktu).toLocaleString('id-ID') : ''}</td><td>${d.latitude || ''}</td><td>${d.longitude || ''}</td></tr>`;
-                });
-                html += '</table>';
-                document.getElementById('tableWrap').innerHTML = html;
-            }).catch(err => {
-                document.getElementById('tableWrap').innerHTML = '<p>Gagal memuat data absensi.</p>';
+        // Load data absensi dan mapping user
+        async function loadAbsensi() {
+            // Ambil semua user untuk mapping NIM ke Nama dan Desa
+            const userMap = {};
+            const userSnap = await db.collection('users').get();
+            userSnap.forEach(doc => {
+                const d = doc.data();
+                userMap[d.nim] = { nama: d.nama, desa: d.desa };
             });
+            // Ambil semua absensi
+            const snap = await db.collection('absensi').orderBy('waktu', 'desc').get();
+            if (snap.empty) {
+                document.getElementById('tableWrap').innerHTML = '<p>Belum ada data absensi.</p>';
+                return;
+            }
+            // Pisahkan data per desa
+            const dataDesa = { 'Moncongloe': [], 'Bonto Bunga': [], 'Moncongloe Bulu': [] };
+            snap.forEach(doc => {
+                const d = doc.data();
+                const user = userMap[d.nim] || {};
+                if (user.desa && dataDesa[user.desa]) {
+                    dataDesa[user.desa].push({ ...d, nama: user.nama, desa: user.desa });
+                }
+            });
+            let html = '';
+            for (const desa of ['Moncongloe', 'Bonto Bunga', 'Moncongloe Bulu']) {
+                html += `<h3>Desa ${desa}</h3>`;
+                html += '<table><tr><th>NIM</th><th>Nama</th><th>Desa</th><th>Device ID</th><th>Waktu</th><th>Latitude</th><th>Longitude</th></tr>';
+                if (dataDesa[desa].length === 0) {
+                    html += '<tr><td colspan="7">Belum ada data</td></tr>';
+                } else {
+                    dataDesa[desa].forEach(d => {
+                        html += `<tr><td>${d.nim || ''}</td><td>${d.nama || ''}</td><td>${d.desa || ''}</td><td>${d.deviceId || ''}</td><td>${d.waktu ? new Date(d.waktu).toLocaleString('id-ID') : ''}</td><td>${d.latitude || ''}</td><td>${d.longitude || ''}</td></tr>`;
+                    });
+                }
+                html += '</table>';
+            }
+            document.getElementById('tableWrap').innerHTML = html;
         }
     </script>
 </body>
