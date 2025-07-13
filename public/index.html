@@ -334,8 +334,6 @@
                         window.sudahAbsenSesiIni = false;
                     }
                 };
-                // Jalankan cek absen sesi ini setiap detik agar selalu update jika hari/sesi berubah
-                setInterval(cekAbsenSesiIni, 1000);
                 cekAbsenSesiIni();
             });
             setInterval(updateCountdown, 1000);
@@ -380,6 +378,7 @@
                 status.textContent = 'Absen telah berhasil.';
                 document.getElementById('absenBtn').style.display = 'none';
                 window.sudahAbsenSesiIni = true;
+                cekAbsenSesiIni();
             })
             .catch((error) => {
                 status.textContent = 'Gagal absen: ' + error.message;
