@@ -85,13 +85,13 @@
         document.getElementById('logoutBtn').onclick = logout;
 
         // NIM admin
-        const ADMIN_NIM = 'E051221065';
+        const ADMIN_NIMS = ['E051221065', 'D121221011'];
 
         // Cek login dan admin
         const nim = getLogin();
         if (!nim) {
             window.location.href = 'index.html';
-        } else if (nim !== ADMIN_NIM) {
+        } else if (!ADMIN_NIMS.includes(nim)) {
             alert('Akses hanya untuk admin!');
             window.location.href = 'index.html';
         } else {

@@ -195,9 +195,9 @@
              const pagiEnd = new Date(now);
              pagiEnd.setHours(9,0,0,0);
              const soreStart = new Date(now);
-             soreStart.setHours(17,0,0,0);
+             soreStart.setHours(18,0,0,0);
              const soreEnd = new Date(now);
-             soreEnd.setHours(18,0,0,0);
+             soreEnd.setHours(21,0,0,0);
 
              if (now >= pagiStart && now <= pagiEnd) return { aktif: true, sesi: 'pagi', end: pagiEnd };
              if (now >= soreStart && now <= soreEnd) return { aktif: true, sesi: 'sore', end: soreEnd };
