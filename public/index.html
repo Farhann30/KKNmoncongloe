@@ -164,7 +164,7 @@
             'Bonto Bunga': { lat: -5.138959, lon: 119.548104 },
             'Moncongloe Bulu': { lat: -5.148056, lon: 119.558239 }
         };
-        const RADIUS_METER = 500;
+                 const RADIUS_METER = 150;
         let userLocation = null;
         let userDesa = null;
 
@@ -189,26 +189,26 @@
             return R * c;
         }
 
-        function getAbsenSession(now) {
-            const pagiStart = new Date(now);
-            pagiStart.setHours(7,0,0,0);
-            const pagiEnd = new Date(now);
-            pagiEnd.setHours(9,0,0,0);
-            const soreStart = new Date(now);
-            soreStart.setHours(18,0,0,0);
-            const soreEnd = new Date(now);
-            soreEnd.setHours(21,0,0,0);
+                 function getAbsenSession(now) {
+             const pagiStart = new Date(now);
+             pagiStart.setHours(7,0,0,0);
+             const pagiEnd = new Date(now);
+             pagiEnd.setHours(9,0,0,0);
+             const soreStart = new Date(now);
+             soreStart.setHours(17,0,0,0);
+             const soreEnd = new Date(now);
+             soreEnd.setHours(18,0,0,0);
 
-            if (now >= pagiStart && now <= pagiEnd) return { aktif: true, sesi: 'pagi', end: pagiEnd };
-            if (now >= soreStart && now <= soreEnd) return { aktif: true, sesi: 'sore', end: soreEnd };
-            if (now < pagiStart) return { aktif: false, sesi: 'pagi', start: pagiStart };
-            if (now > pagiEnd && now < soreStart) return { aktif: false, sesi: 'sore', start: soreStart };
-            // Setelah sore, sesi berikutnya besok pagi
-            const besokPagi = new Date(now);
-            besokPagi.setDate(besokPagi.getDate() + 1);
-            besokPagi.setHours(7,0,0,0);
-            return { aktif: false, sesi: 'pagi', start: besokPagi };
-        }
+             if (now >= pagiStart && now <= pagiEnd) return { aktif: true, sesi: 'pagi', end: pagiEnd };
+             if (now >= soreStart && now <= soreEnd) return { aktif: true, sesi: 'sore', end: soreEnd };
+             if (now < pagiStart) return { aktif: false, sesi: 'pagi', start: pagiStart };
+             if (now > pagiEnd && now < soreStart) return { aktif: false, sesi: 'sore', start: soreStart };
+             // Setelah sore, sesi berikutnya besok pagi
+             const besokPagi = new Date(now);
+             besokPagi.setDate(besokPagi.getDate() + 1);
+             besokPagi.setHours(7,0,0,0);
+             return { aktif: false, sesi: 'pagi', start: besokPagi };
+         }
 
         function cekLokasiDanUpdateAbsenBtn() {
             const absenBtn = document.getElementById('absenBtn');
@@ -225,7 +225,7 @@
                 status.textContent = '';
             } else {
                 absenBtn.disabled = true;
-                status.textContent = `Anda di luar radius posko ${userDesa} (${Math.round(jarak)} meter). Absen hanya bisa di dalam radius 150 meter.`;
+                                 status.textContent = `Anda di luar radius posko ${userDesa} (${Math.round(jarak)} meter). Absen hanya bisa di dalam radius ${RADIUS_METER} meter.`;
             }
         }
 
@@ -358,15 +358,22 @@
                 window.sudahAbsenSesiIni = true;
                 return;
             }
-            const data = {
-                nim: getLogin(),
-                deviceId: getDeviceId(),
-                waktu: new Date().toISOString(),
-                latitude: userLocation.lat,
-                longitude: userLocation.lon,
-                sesi,
-                tanggal
-            };
+                         // Ambil data user untuk disimpan bersama absensi
+             const userSnap = await db.collection('users').where('nim', '==', getLogin()).get();
+             const userData = userSnap.docs[0].data();
+             
+             const data = {
+                 nim: getLogin(),
+                 nama: userData.nama,
+                 desa: userData.desa,
+                 fakultas: userData.fakultas,
+                 deviceId: getDeviceId(),
+                 waktu: new Date().toISOString(),
+                 latitude: userLocation.lat,
+                 longitude: userLocation.lon,
+                 sesi,
+                 tanggal
+             };
             status.textContent = 'Menyimpan data absensi...';
             db.collection("absensi").add(data)
             .then(() => {
