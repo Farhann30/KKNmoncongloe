@@ -164,7 +164,7 @@
             'Bonto Bunga': { lat: -5.138959, lon: 119.548104 },
             'Moncongloe Bulu': { lat: -5.148056, lon: 119.558239 }
         };
-                 const RADIUS_METER = 150;
+                 const MAX_RADIUS = 500; // meter
         let userLocation = null;
         let userDesa = null;
 
@@ -220,12 +220,12 @@
             }
             const posko = POSKO_COORDS[userDesa];
             const jarak = getDistanceFromLatLonInMeters(userLocation.lat, userLocation.lon, posko.lat, posko.lon);
-            if (jarak <= RADIUS_METER) {
+            if (jarak <= MAX_RADIUS) {
                 absenBtn.disabled = false;
                 status.textContent = '';
             } else {
                 absenBtn.disabled = true;
-                                 status.textContent = `Anda di luar radius posko ${userDesa} (${Math.round(jarak)} meter). Absen hanya bisa di dalam radius ${RADIUS_METER} meter.`;
+                                 status.textContent = `Anda di luar radius posko ${userDesa} (${Math.round(jarak)} meter). Absen hanya bisa di dalam radius ${MAX_RADIUS} meter.`;
             }
         }
 
