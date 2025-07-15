@@ -155,9 +155,9 @@
                     tanggalArr.forEach(tgl => {
                         const tglIso = tgl.toISOString().slice(0,10);
                         // Sesi pagi
-                        html += '<td ' + getCellStyle(nim, tglIso, 'pagi', absenMap, tgl) + '></td>';
+                        html += `<td data-nim="${nim}" data-tanggal="${tglIso}" data-sesi="pagi" ` + getCellStyle(nim, tglIso, 'pagi', absenMap, tgl) + '></td>';
                         // Sesi sore
-                        html += '<td ' + getCellStyle(nim, tglIso, 'sore', absenMap, tgl) + '></td>';
+                        html += `<td data-nim="${nim}" data-tanggal="${tglIso}" data-sesi="sore" ` + getCellStyle(nim, tglIso, 'sore', absenMap, tgl) + '></td>';
                     });
                     html += '</tr>';
                 });
@@ -165,6 +165,41 @@
             });
             html += '<div style="margin-top:1em"><span style="display:inline-block;width:20px;height:20px;background:#28a745;margin-right:5px;vertical-align:middle"></span>Hadir &nbsp; <span style="display:inline-block;width:20px;height:20px;background:#dc3545;margin-right:5px;vertical-align:middle"></span>Tidak Hadir &nbsp; <span style="display:inline-block;width:20px;height:20px;background:#fff;border:1px solid #ccc;margin-right:5px;vertical-align:middle"></span>Sesi belum berjalan</div>';
             document.getElementById('tableWrap').innerHTML = html;
+            // Tambahkan event listener untuk cell absensi (hanya admin)
+            document.querySelectorAll('#tableWrap td[data-nim]').forEach(cell => {
+                cell.style.cursor = 'pointer';
+                cell.addEventListener('click', async function() {
+                    const nim = this.getAttribute('data-nim');
+                    const tanggal = this.getAttribute('data-tanggal');
+                    const sesi = this.getAttribute('data-sesi');
+                    // Deteksi status sekarang
+                    const bg = this.style.backgroundColor;
+                    let nextStatus;
+                    if (bg === 'rgb(40, 167, 69)' || this.style.background === 'rgb(40, 167, 69)' || this.style.background === '#28a745') {
+                        nextStatus = 'tidak'; // dari hijau ke merah
+                    } else if (bg === 'rgb(220, 53, 69)' || this.style.background === 'rgb(220, 53, 69)' || this.style.background === '#dc3545') {
+                        nextStatus = 'kosong'; // dari merah ke putih
+                    } else {
+                        nextStatus = 'hadir'; // dari putih ke hijau
+                    }
+                    // Update tampilan dan Firestore
+                    if (nextStatus === 'hadir') {
+                        this.style.background = '#28a745';
+                        // Tambah dokumen absensi
+                        await db.collection('absensi').add({ nim, tanggal, sesi });
+                    } else if (nextStatus === 'tidak') {
+                        this.style.background = '#dc3545';
+                        // Hapus dokumen absensi jika ada
+                        const q = await db.collection('absensi').where('nim', '==', nim).where('tanggal', '==', tanggal).where('sesi', '==', sesi).get();
+                        q.forEach(async doc => { await db.collection('absensi').doc(doc.id).delete(); });
+                    } else if (nextStatus === 'kosong') {
+                        this.style.background = '#fff';
+                        // Pastikan dokumen absensi tidak ada
+                        const q = await db.collection('absensi').where('nim', '==', nim).where('tanggal', '==', tanggal).where('sesi', '==', sesi).get();
+                        q.forEach(async doc => { await db.collection('absensi').doc(doc.id).delete(); });
+                    }
+                });
+            });
         }
 
         // Helper: style cell absen
