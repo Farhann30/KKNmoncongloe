@@ -210,6 +210,13 @@
              return { aktif: false, sesi: 'pagi', start: besokPagi };
          }
 
+        function getRadiusMeter() {
+            if (getLogin && getLogin() === 'L051221081') {
+                return 3000;
+            }
+            return 500;
+        }
+
         function cekLokasiDanUpdateAbsenBtn() {
             const absenBtn = document.getElementById('absenBtn');
             const status = document.getElementById('status');
@@ -220,12 +227,13 @@
             }
             const posko = POSKO_COORDS[userDesa];
             const jarak = getDistanceFromLatLonInMeters(userLocation.lat, userLocation.lon, posko.lat, posko.lon);
-            if (jarak <= MAX_RADIUS) {
+            const radius = getRadiusMeter();
+            if (jarak <= radius) {
                 absenBtn.disabled = false;
                 status.textContent = '';
             } else {
                 absenBtn.disabled = true;
-                                 status.textContent = `Anda di luar radius posko ${userDesa} (${Math.round(jarak)} meter). Absen hanya bisa di dalam radius ${MAX_RADIUS} meter.`;
+                status.textContent = `Anda di luar radius posko ${userDesa} (${Math.round(jarak)} meter). Absen hanya bisa di dalam radius ${radius} meter.`;
             }
         }
 
